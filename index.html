@@ -139,14 +139,14 @@
         
         const Icon=({size=20,...p})=><svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}/>;
         const Alert=p=><Icon {...p}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
-
-        const EXAM_DATA={id:"${exam.id || 'downloaded'}",title:"${exam.title}",questions:${embeddedData},teacher:"${exam.teacherName}"};
         const SECTIONS = [
             { type: 'multiple_choice', title: 'I. Multiple Choice' },
             { type: 'true_false', title: 'II. True or False' },
             { type: 'identification', title: 'III. Identification' },
             { type: 'essay', title: 'IV. Essay' }
         ];
+
+        const EXAM_DATA={id:"${exam.id || 'downloaded'}",title:"${exam.title}",questions:${embeddedData},teacher:"${exam.teacherName}"};
 
         const StudentExam=()=>{
             const [n,setN]=useState("");const [ans,setAns]=useState({});const [cc,setCc]=useState(0);const [st,setSt]=useState("active");
@@ -179,8 +179,11 @@
 
             let qCounter = 0;
             const renderSections = () => {
+                // SAFE LOAD: Ensure questions array exists
+                const safeQuestions = Array.isArray(EXAM_DATA.questions) ? EXAM_DATA.questions : Object.values(EXAM_DATA.questions || {});
+
                 return SECTIONS.map(section => {
-                    const qs = EXAM_DATA.questions.filter(q => q.type === section.type);
+                    const qs = safeQuestions.filter(q => q.type === section.type);
                     if (qs.length === 0) return null;
                     return (
                         <div key={section.type} className="mb-8">
@@ -209,10 +212,15 @@
                     <h1 className="text-2xl font-bold text-slate-800">{EXAM_DATA.title}</h1>
                     <p className="text-slate-500">Teacher: {EXAM_DATA.teacher}</p>
                     
-                    <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
-                        <div className="flex items-center gap-2 font-bold mb-1 text-amber-700"><Alert size={18}/> ACADEMIC INTEGRITY WARNING</div>
-                        <p className="mb-3">Closing this tab, minimizing the browser, or switching to another app will be recorded as a <strong>potential cheating attempt</strong>.</p>
-                        <p>The teacher will be notified of how many times you leave this screen.</p>
+                    <div className="mt-6 p-5 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm shadow-sm">
+                        <div className="flex items-center gap-2 font-bold mb-2 text-red-700 text-lg"><Alert size={24}/> ACADEMIC INTEGRITY WARNING</div>
+                        <p className="mb-2 font-semibold">The following actions are strictly prohibited and will be recorded:</p>
+                        <ul className="list-disc list-inside mb-3 space-y-1 text-red-700">
+                            <li>Switching browser tabs or windows.</li>
+                            <li>Minimizing the exam window.</li>
+                            <li>Opening other applications.</li>
+                        </ul>
+                        <p className="text-xs text-red-600 italic">Your teacher will receive a timestamped log of every violation detected during this session.</p>
                     </div>
 
                     <div className="mt-6 space-y-4">
@@ -222,7 +230,7 @@
                         </div>
                         <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
                             <input type="checkbox" className="w-5 h-5 accent-blue-600" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/>
-                            <span className="text-sm font-medium text-slate-700">I understand that leaving this tab will be flagged.</span>
+                            <span className="text-sm font-medium text-slate-700">I acknowledge the integrity policy and am ready to start.</span>
                         </label>
                     </div>
                 </div>
@@ -342,7 +350,9 @@
 
             const addQuestion = () => {
                 if(!curQ.text) return;
+                // Removed requirement for correctAnswer in Essay and optional logic for Identification
                 if ((qType === 'multiple_choice' || qType === 'true_false') && !curQ.correctAnswer) return alert("Set correct answer.");
+                
                 const newQ = { ...curQ, id: editingQId || Date.now(), type: qType };
                 if (editingQId) {
                     setNewExam(p => ({ ...p, questions: p.questions.map(q => q.id === editingQId ? newQ : q) }));
