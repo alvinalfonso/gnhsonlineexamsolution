@@ -3,29 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusExam Platform</title>
+    <title>FocusExam - Multi-Course Platform</title>
     
-    <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- 3. Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- 4. Firebase SDKs (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; }
         .animate-fade-in { animation: fadeIn 0.3s ease-in; }
-        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body>
@@ -35,32 +27,25 @@
         const { useState, useEffect } = React;
 
         // --- ICONS ---
-        const Icon = ({ size = 24, color = "currentColor", children, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>
+        const Icon = ({ size = 20, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props} />
         );
-        const ShieldAlert = (props) => <Icon {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="M12 8v4" /><path d="M12 16h.01" /></Icon>;
-        const List = (props) => <Icon {...props}><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></Icon>;
-        const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></Icon>;
-        const Hash = (props) => <Icon {...props}><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></Icon>;
-        const Type = (props) => <Icon {...props}><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" x2="15" y1="20" y2="20" /><line x1="12" x2="12" y1="4" y2="20" /></Icon>;
-        const PlusCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></Icon>;
-        const Trash2 = (props) => <Icon {...props}><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></Icon>;
-        const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3" /></Icon>;
-        const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></Icon>;
-        const AlertCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></Icon>;
-        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
-        const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></Icon>;
-        const LogIn = (props) => <Icon {...props}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></Icon>;
-        const Database = (props) => <Icon {...props}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></Icon>;
-        const X = (props) => <Icon {...props}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>;
-        const Code = (props) => <Icon {...props}><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></Icon>;
-        const User = (props) => <Icon {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Icon>;
-        const CloudUpload = (props) => <Icon {...props}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M12 12v9" /><path d="m16 16-4-4-4 4" /></Icon>;
-        const GraduationCap = (props) => <Icon {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></Icon>;
-        const Radio = (props) => <Icon {...props}><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" /><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" /><circle cx="12" cy="12" r="2" /></Icon>;
-        const Check = (props) => <Icon {...props}><polyline points="20 6 9 17 4 12" /></Icon>;
+        const Icons = {
+            Shield: (p) => <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></Icon>,
+            Book: (p) => <Icon {...p}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></Icon>,
+            Users: (p) => <Icon {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>,
+            Plus: (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>,
+            Trash: (p) => <Icon {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Icon>,
+            Eye: (p) => <Icon {...p}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></Icon>,
+            Download: (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>,
+            Check: (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>,
+            Play: (p) => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3"/></Icon>,
+            LogOut: (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>,
+            Cloud: (p) => <Icon {...p}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></Icon>,
+            Filter: (p) => <Icon {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></Icon>
+        };
 
-        // --- FIREBASE CONFIGURATION ---
+        // --- CONFIG ---
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyCrpCFcwF9TtVMOzi2zNJYv-IVYKENC_i4",
             authDomain: "gnhs-online-exam-solution.firebaseapp.com",
@@ -72,141 +57,297 @@
             measurementId: "G-RSTERRCZ19"
         };
 
-        // --- AUTHORIZED ADMIN EMAILS ---
         const AUTHORIZED_TEACHERS = [
             "alvin.alfonso1262@gmail.com",
             "alvin.alfonso2222@gmail.com",
             "alvina.rhss@gmail.com"
         ];
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(FIREBASE_CONFIG);
-        }
+        // Init Firebase
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
         const auth = firebase.auth();
         const db = firebase.database();
 
+        // --- HELPER: GENERATE STUDENT EXAM HTML (The "Download" feature) ---
+        const downloadHtmlFile = (exam) => {
+            const embeddedData = JSON.stringify(exam.questions);
+            const embeddedConfig = JSON.stringify(FIREBASE_CONFIG);
+            const scriptEnd = "<\/script>"; 
+            
+            const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${exam.title}</title>
+<script src="https://cdn.tailwindcss.com">${scriptEnd}
+<script src="https://unpkg.com/react@18/umd/react.development.js">${scriptEnd}
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js">${scriptEnd}
+<script src="https://unpkg.com/@babel/standalone/babel.min.js">${scriptEnd}
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">${scriptEnd}
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js">${scriptEnd}
+<style>body{font-family:sans-serif;background:#f8fafc}.fade{animation:f .3s ease-in}@keyframes f{from{opacity:0}to{opacity:1}}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const {useState,useEffect}=React;
+const firebaseConfig=${embeddedConfig};
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const EXAM_DATA={id:"${exam.id || 'downloaded'}",title:"${exam.title}",questions:${embeddedData}};
+const StudentExam=()=>{
+const [n,setN]=useState("");const [ans,setAns]=useState({});const [cc,setCc]=useState(0);const [st,setSt]=useState("active");
+useEffect(()=>{
+ const h=()=>{if(document.hidden&&st==="active"){setCc(c=>c+1);alert("Warning: Focus Lost logged.")}};
+ document.addEventListener("visibilitychange",h);return()=>document.removeEventListener("visibilitychange",h);
+},[st]);
+const sub=()=>{
+ if(!n)return alert("Name required");if(!confirm("Submit?"))return;
+ setSt("submitting");
+ db.ref('submissions').push({studentName:n,answers:ans,cheatStats:{count:cc},submittedAt:new Date().toISOString(),examTitle:EXAM_DATA.title,examId:EXAM_DATA.id})
+ .then(()=>setSt("submitted")).catch(e=>{alert(e.message);setSt("active")});
+};
+if(st==="submitted")return <div className="p-10 text-center"><h1 className="text-2xl font-bold">Submitted</h1><p>Thank you, {n}.</p></div>;
+return(
+ <div className="max-w-2xl mx-auto p-6 bg-white min-h-screen">
+  <div className="mb-6 border-b pb-4"><h1 className="text-xl font-bold">{EXAM_DATA.title}</h1></div>
+  <div className="mb-6"><label className="block text-sm font-bold mb-1">Your Name</label><input className="w-full p-2 border rounded" value={n} onChange={e=>setN(e.target.value)}/></div>
+  {EXAM_DATA.questions.map((q,i)=>(
+   <div key={q.id} className="mb-6 p-4 border rounded bg-slate-50">
+    <p className="font-medium mb-3">{i+1}. {q.text}</p>
+    {q.type==='multiple_choice'?q.options.map((o,x)=><label key={x} className="block mb-2"><input type="radio" name={'q'+q.id} onChange={()=>setAns({...ans,[q.id]:o})}/> {o}</label>)
+    :<textarea className="w-full p-2 border rounded" onChange={e=>setAns({...ans,[q.id]:e.target.value})}/>}
+   </div>
+  ))}
+  <button onClick={sub} disabled={st==='submitting'} className="w-full bg-blue-600 text-white p-3 rounded font-bold">{st==='submitting'?'Uploading...':'Submit Exam'}</button>
+ </div>
+)};
+const root=ReactDOM.createRoot(document.getElementById('root'));root.render(<StudentExam/>);
+${scriptEnd}</body></html>`;
+
+            try {
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${exam.title.replace(/\s+/g, '_')}_Exam.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert("Download failed.");
+            }
+        };
+
         // --- COMPONENTS ---
 
-        // 1. LANDING PAGE
-        const LandingPage = ({ onSelectRole }) => {
+        // 1. EXAM CARD (Teacher View)
+        const ExamCard = ({ exam, onToggleStatus, onDelete, onViewResults, onDownload }) => {
             return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                    <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
-                        <div className="bg-slate-900 p-10 flex flex-col justify-center text-white md:w-5/12">
-                            <div className="mb-6"><ShieldAlert size={64} className="text-indigo-400"/></div>
-                            <h1 className="text-4xl font-bold mb-4">FocusExam</h1>
-                            <p className="text-slate-300 text-lg leading-relaxed">
-                                A secure, integrity-focused testing platform for modern education.
-                            </p>
+                <div className={`bg-white rounded-xl shadow-sm border-l-4 p-5 mb-4 flex justify-between items-center transition-all ${exam.status === 'published' ? 'border-green-500 shadow-green-100' : 'border-slate-300'}`}>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold text-lg text-slate-800">{exam.title}</h3>
+                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">{exam.subject}</span>
+                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">{exam.yearLevel}</span>
                         </div>
-                        <div className="p-10 flex flex-col justify-center md:w-7/12">
-                            <h2 className="text-2xl font-bold text-slate-800 mb-8 text-center">Select Your Role</h2>
-                            <div className="space-y-4">
-                                <button onClick={() => onSelectRole('teacher')} className="w-full flex items-center p-4 border-2 border-slate-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group text-left">
-                                    <div className="bg-indigo-100 p-3 rounded-full mr-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><LogIn size={24}/></div>
-                                    <div><h3 className="font-bold text-lg text-slate-800">I am a Teacher</h3><p className="text-slate-500 text-sm">Create and assign exams</p></div>
-                                </button>
-                                <button onClick={() => onSelectRole('student')} className="w-full flex items-center p-4 border-2 border-slate-200 rounded-xl hover:border-green-600 hover:bg-green-50 transition-all group text-left">
-                                    <div className="bg-green-100 p-3 rounded-full mr-4 group-hover:bg-green-600 group-hover:text-white transition-colors"><GraduationCap size={24}/></div>
-                                    <div><h3 className="font-bold text-lg text-slate-800">I am a Student</h3><p className="text-slate-500 text-sm">Take assigned exams</p></div>
-                                </button>
-                            </div>
-                        </div>
+                        <p className="text-sm text-slate-500">
+                            Created: {new Date(exam.createdAt).toLocaleDateString()} • {exam.questions?.length || 0} Questions
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={() => onToggleStatus(exam)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors ${exam.status === 'published' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                        >
+                            <Icons.Cloud size={14} />
+                            {exam.status === 'published' ? 'Published' : 'Draft'}
+                        </button>
+                        <button onClick={() => onDownload(exam)} className="text-slate-500 hover:bg-slate-100 p-2 rounded-lg" title="Download HTML"><Icons.Download size={18}/></button>
+                        <button onClick={() => onViewResults(exam.id)} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg" title="View Results"><Icons.Eye size={18}/></button>
+                        <button onClick={() => onDelete(exam.id)} className="text-red-400 hover:bg-red-50 p-2 rounded-lg" title="Delete"><Icons.Trash size={18}/></button>
                     </div>
                 </div>
             );
         };
 
-        // 2. TEACHER LOGIN
-        const TeacherLogin = ({ onSuccess, onBack }) => {
-            const handleGoogleLogin = () => {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                auth.signInWithPopup(provider)
-                    .then((result) => {
-                        if (AUTHORIZED_TEACHERS.includes(result.user.email)) {
-                            onSuccess(result.user);
-                        } else {
-                            auth.signOut();
-                            alert("⛔ Access Denied: Unauthorized Teacher Email.");
-                        }
-                    })
-                    .catch((error) => alert("Login failed: " + error.message));
+        // 2. TEACHER DASHBOARD
+        const TeacherDashboard = ({ user, onLogout }) => {
+            const [view, setView] = useState("list"); // list, create, results
+            const [exams, setExams] = useState([]);
+            const [selectedExamId, setSelectedExamId] = useState(null);
+            
+            // Create Form State
+            const [newExam, setNewExam] = useState({ title: "", subject: "", yearLevel: "", questions: [] });
+            const [qType, setQType] = useState("multiple_choice");
+            const [curQ, setCurQ] = useState({ text: "", options: ["","","",""], correctAnswer: "" });
+
+            // Load Exams
+            useEffect(() => {
+                db.ref('exams').on('value', s => {
+                    const data = s.val();
+                    if(data) {
+                        // Sort by newest first
+                        setExams(Object.entries(data).map(([k,v]) => ({id:k, ...v})).reverse());
+                    } else setExams([]);
+                });
+            }, []);
+
+            const saveExam = () => {
+                if(!newExam.title || !newExam.subject || !newExam.yearLevel) return alert("Please fill in all details.");
+                if(newExam.questions.length === 0) return alert("Add at least one question.");
+                
+                db.ref('exams').push({
+                    ...newExam,
+                    teacher: user.email,
+                    createdAt: new Date().toISOString(),
+                    status: 'draft' 
+                });
+                setNewExam({ title: "", subject: "", yearLevel: "", questions: [] });
+                setView("list");
+            };
+
+            const toggleStatus = (exam) => {
+                const newStatus = exam.status === 'published' ? 'draft' : 'published';
+                db.ref(`exams/${exam.id}/status`).set(newStatus);
+            };
+
+            const deleteExam = (id) => {
+                if(confirm("Delete this exam permanently?")) db.ref(`exams/${id}`).remove();
+            };
+
+            const addQuestion = () => {
+                if(!curQ.text) return;
+                setNewExam({...newExam, questions: [...newExam.questions, {...curQ, id: Date.now(), type: qType}]});
+                setCurQ({ text: "", options: ["","","",""], correctAnswer: "" });
+            };
+
+            const setOption = (idx, val) => {
+                const n = [...curQ.options]; n[idx] = val;
+                if(curQ.correctAnswer === curQ.options[idx]) setCurQ({...curQ, options:n, correctAnswer:val});
+                else setCurQ({...curQ, options:n});
             };
 
             return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                    <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-                        <div className="mx-auto bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 text-indigo-600"><ShieldAlert size={32} /></div>
-                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Teacher Access</h2>
-                        <p className="text-slate-500 mb-6">Restricted to authorized administrators.</p>
-                        <button onClick={handleGoogleLogin} className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 flex items-center justify-center gap-2 mb-4"><Icon size={20}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></Icon> Sign in with Google</button>
-                        <button onClick={onBack} className="text-slate-400 hover:text-slate-600 text-sm">Cancel</button>
-                    </div>
+                <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in text-slate-800">
+                    <header className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <div>
+                            <h1 className="text-2xl font-bold flex items-center gap-2 text-indigo-900"><Icons.Shield className="text-indigo-600"/> FocusExam</h1>
+                            <p className="text-xs text-slate-500">Welcome, {user.email}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            {view !== 'list' && <button onClick={() => setView('list')} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Back to Dashboard</button>}
+                            <button onClick={onLogout} className="p-2 text-slate-400 hover:text-red-500 rounded-lg"><Icons.LogOut/></button>
+                        </div>
+                    </header>
+
+                    {view === 'list' && (
+                        <div>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-slate-700">Exam Management</h2>
+                                <button onClick={() => setView('create')} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-200"><Icons.Plus size={18}/> Create New Exam</button>
+                            </div>
+                            
+                            <div className="grid gap-2">
+                                {exams.length === 0 ? <div className="text-center py-20 text-slate-400">No exams created yet.</div> : 
+                                exams.map(ex => (
+                                    <ExamCard 
+                                        key={ex.id} 
+                                        exam={ex} 
+                                        onToggleStatus={toggleStatus} 
+                                        onDelete={deleteExam}
+                                        onDownload={downloadHtmlFile}
+                                        onViewResults={(id) => { setSelectedExamId(id); setView('results'); }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'create' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-1 space-y-4">
+                                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Icons.Book size={18}/> Exam Info</h3>
+                                    <div className="space-y-3">
+                                        <input className="w-full p-2 border rounded text-sm" placeholder="Exam Title (e.g. Midterms)" value={newExam.title} onChange={e => setNewExam({...newExam, title: e.target.value})} />
+                                        <input className="w-full p-2 border rounded text-sm" placeholder="Subject (e.g. Science)" value={newExam.subject} onChange={e => setNewExam({...newExam, subject: e.target.value})} />
+                                        <input className="w-full p-2 border rounded text-sm" placeholder="Year Level (e.g. Grade 10)" value={newExam.yearLevel} onChange={e => setNewExam({...newExam, yearLevel: e.target.value})} />
+                                    </div>
+                                </div>
+                                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                    <h3 className="font-bold text-slate-700 mb-4">Add Question</h3>
+                                    <div className="flex gap-2 mb-3 bg-slate-100 p-1 rounded-lg">
+                                        {['multiple_choice', 'identification', 'essay'].map(t => (
+                                            <button key={t} onClick={() => setQType(t)} className={`flex-1 py-1 text-[10px] font-bold uppercase rounded ${qType === t ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>{t.replace('_', ' ').substring(0,8)}</button>
+                                        ))}
+                                    </div>
+                                    <textarea className="w-full p-2 border rounded text-sm h-20 mb-2" placeholder="Question text..." value={curQ.text} onChange={e => setCurQ({...curQ, text: e.target.value})}></textarea>
+                                    
+                                    {qType === 'multiple_choice' && curQ.options.map((o, i) => (
+                                        <div key={i} className="flex items-center gap-2 mb-2">
+                                            <input type="radio" name="c" checked={curQ.correctAnswer === o && o !== ""} onChange={() => setCurQ({...curQ, correctAnswer: o})} className="accent-indigo-600"/>
+                                            <input className="flex-1 p-1.5 border rounded text-xs" placeholder={`Option ${i+1}`} value={o} onChange={e => setOption(i, e.target.value)}/>
+                                        </div>
+                                    ))}
+                                    {qType === 'identification' && <input className="w-full p-2 border rounded text-sm border-green-200 bg-green-50 mb-2" placeholder="Correct Answer Key" value={curQ.correctAnswer} onChange={e => setCurQ({...curQ, correctAnswer: e.target.value})} />}
+                                    
+                                    <button onClick={addQuestion} className="w-full bg-slate-800 text-white py-2 rounded-lg font-bold text-sm hover:bg-slate-900">Add to List</button>
+                                </div>
+                                <button onClick={saveExam} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-green-700">Save Exam Draft</button>
+                            </div>
+                            
+                            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <h3 className="font-bold border-b pb-2 mb-4 text-slate-500">Questions Preview ({newExam.questions.length})</h3>
+                                <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                                    {newExam.questions.map((q, i) => (
+                                        <div key={i} className="p-4 border rounded bg-slate-50 relative">
+                                            <p className="font-bold text-slate-800">{i+1}. {q.text}</p>
+                                            {q.type === 'multiple_choice' && <div className="ml-4 mt-2 border-l-2 pl-2 space-y-1">{q.options.map((o, idx) => <div key={idx} className={`text-sm ${q.correctAnswer === o ? 'text-green-600 font-bold' : 'text-slate-500'}`}>{o}</div>)}</div>}
+                                            {q.type === 'identification' && <div className="mt-2 text-xs bg-green-100 text-green-800 w-fit px-2 py-1 rounded">Key: {q.correctAnswer}</div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'results' && <ResultsDashboard examId={selectedExamId} onClose={() => setView('list')} />}
                 </div>
             );
         };
 
-        // 3. RESULTS LIST
-        const ResultsList = ({ onClose }) => {
-            const [submissions, setSubmissions] = useState([]);
+        // 3. RESULTS DASHBOARD
+        const ResultsDashboard = ({ examId, onClose }) => {
+            const [subs, setSubs] = useState([]);
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
-                const subRef = db.ref('submissions');
-                subRef.on('value', (s) => {
+                db.ref('submissions').orderByChild('examId').equalTo(examId).on('value', s => {
                     const data = s.val();
-                    if (data) {
-                        const list = Object.values(data).sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-                        setSubmissions(list);
-                    } else setSubmissions([]);
+                    if(data) setSubs(Object.values(data));
+                    else setSubs([]);
                     setLoading(false);
                 });
-                return () => subRef.off();
-            }, []);
+            }, [examId]);
 
             return (
-                <div className="max-w-6xl mx-auto p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px]">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Database/> Results</h2>
-                        <button onClick={onClose} className="text-slate-500 hover:text-slate-800">Close</button>
+                        <h2 className="text-xl font-bold">Exam Results</h2>
+                        <button onClick={onClose} className="text-sm text-slate-500">Back</button>
                     </div>
                     {loading ? <p>Loading...</p> : (
-                        <div className="bg-white rounded shadow overflow-x-auto">
+                        <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-100 border-b">
-                                    <tr>
-                                        <th className="p-3">Student</th>
-                                        <th className="p-3">Score (Auto)</th>
-                                        <th className="p-3">Integrity</th>
-                                        <th className="p-3">Time</th>
-                                        <th className="p-3">Action</th>
-                                    </tr>
-                                </thead>
+                                <thead className="bg-slate-100"><tr><th className="p-3">Student</th><th className="p-3">Time</th><th className="p-3">Integrity</th><th className="p-3">Data</th></tr></thead>
                                 <tbody>
-                                    {submissions.map((s, i) => {
-                                        // Simple Auto-Grading Logic for display
-                                        let score = 0;
-                                        let maxScore = 0;
-                                        if (s.questions) { // Assuming questions snapshot was saved with submission for context, otherwise we assume current exam structure matches which is risky.
-                                            // Ideally, store question snapshot in submission. For now, we skip score if not available or just show answers.
-                                        }
-                                        
-                                        return (
-                                            <tr key={i} className="border-b hover:bg-slate-50">
-                                                <td className="p-3 font-medium">{s.studentName}</td>
-                                                <td className="p-3">
-                                                    {/* Placeholder for auto-grade display if logic exists */}
-                                                    <span className="text-slate-400 italic">View to grade</span>
-                                                </td>
-                                                <td className="p-3"><span className={`px-2 py-1 rounded text-xs ${s.cheatStats?.count > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{s.cheatStats?.count || 0} Flags</span></td>
-                                                <td className="p-3 text-slate-500">{new Date(s.submittedAt).toLocaleString()}</td>
-                                                <td className="p-3">
-                                                    <button onClick={() => alert(JSON.stringify(s.answers, null, 2))} className="text-blue-600 underline">View Answers</button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                    {subs.map((s, i) => (
+                                        <tr key={i} className="border-b">
+                                            <td className="p-3 font-medium">{s.studentName}</td>
+                                            <td className="p-3">{new Date(s.submittedAt).toLocaleString()}</td>
+                                            <td className="p-3"><span className={`px-2 py-1 rounded text-xs ${s.cheatStats?.count > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>{s.cheatStats?.count || 0} Flags</span></td>
+                                            <td className="p-3"><button onClick={()=>alert(JSON.stringify(s.answers, null, 2))} className="text-blue-600 underline">Answers</button></td>
+                                        </tr>
+                                    ))}
+                                    {subs.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-slate-400">No submissions yet.</td></tr>}
                                 </tbody>
                             </table>
                         </div>
@@ -215,24 +356,47 @@
             );
         };
 
-        // 4. STUDENT PORTAL
+        // 4. STUDENT PORTAL (Smart Filter)
         const StudentPortal = ({ onBack }) => {
+            const [exams, setExams] = useState([]);
+            const [filteredExams, setFilteredExams] = useState([]);
+            
+            // Filter States
+            const [selectedYear, setSelectedYear] = useState("");
+            const [selectedSubject, setSelectedSubject] = useState("");
+            
+            // Exam States
             const [activeExam, setActiveExam] = useState(null);
             const [studentName, setStudentName] = useState("");
-            const [status, setStatus] = useState("waiting"); 
+            const [status, setStatus] = useState("lobby"); // lobby, ready, taking, submitted
             const [answers, setAnswers] = useState({});
             const [cheatCount, setCheatCount] = useState(0);
 
+            // Load Published Exams
             useEffect(() => {
-                const examRef = db.ref('active_exam');
-                const listener = examRef.on('value', (s) => {
-                    const val = s.val();
-                    if (val) { setActiveExam(val); if(status === 'waiting') setStatus("ready"); }
-                    else { setActiveExam(null); setStatus("waiting"); }
+                db.ref('exams').orderByChild('status').equalTo('published').on('value', s => {
+                    const data = s.val();
+                    if (data) {
+                        const list = Object.entries(data).map(([k,v]) => ({id:k, ...v}));
+                        setExams(list);
+                    } else setExams([]);
                 });
-                return () => examRef.off('value', listener);
-            }, [status]);
+            }, []);
 
+            // Filter Logic
+            useEffect(() => {
+                if (!selectedYear || !selectedSubject) {
+                    setFilteredExams([]);
+                    return;
+                }
+                const matches = exams.filter(e => 
+                    e.yearLevel.toLowerCase().includes(selectedYear.toLowerCase()) && 
+                    e.subject.toLowerCase().includes(selectedSubject.toLowerCase())
+                );
+                setFilteredExams(matches);
+            }, [selectedYear, selectedSubject, exams]);
+
+            // Cheat Detection
             useEffect(() => {
                 if (status !== 'taking') return;
                 const h = () => { if (document.hidden) setCheatCount(c => c + 1); };
@@ -241,231 +405,132 @@
             }, [status]);
 
             const submit = () => {
-                if (!confirm("Submit?")) return;
+                if(!confirm("Submit?")) return;
                 db.ref('submissions').push({
-                    studentName,
+                    examId: activeExam.id,
                     examTitle: activeExam.title,
+                    studentName,
                     answers,
                     cheatStats: { count: cheatCount },
                     submittedAt: new Date().toISOString()
-                }).then(() => setStatus("submitted"));
+                }).then(() => setStatus('submitted'));
             };
 
-            if (status === "waiting") return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                    <div className="bg-white p-8 rounded-xl shadow text-center max-w-md w-full relative">
-                        <button onClick={onBack} className="absolute top-4 left-4 text-gray-400">Back</button>
-                        <h2 className="text-xl font-bold mb-4 text-slate-700">Student Portal</h2>
-                        <div className="p-6 bg-yellow-50 text-yellow-700 rounded border border-yellow-200 animate-pulse">Teacher has not assigned an exam yet.</div>
-                    </div>
-                </div>
-            );
+            // VIEW: LOBBY
+            if (status === 'lobby') {
+                // Extract unique Years and Subjects for dropdowns
+                const years = [...new Set(exams.map(e => e.yearLevel))];
+                const subjects = [...new Set(exams.map(e => e.subject))];
 
-            if (status === "ready") return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                    <div className="bg-white p-8 rounded-xl shadow text-center max-w-md w-full">
-                        <h2 className="text-xl font-bold mb-2 text-green-700">Exam Ready!</h2>
-                        <p className="mb-4 text-slate-600">{activeExam.title}</p>
-                        <input className="w-full p-3 border rounded mb-4" placeholder="Enter Full Name" value={studentName} onChange={e => setStudentName(e.target.value)} />
-                        <button onClick={() => { if(studentName) setStatus("taking"); else alert("Name required"); }} className="w-full bg-green-600 text-white p-3 rounded font-bold">Start Exam</button>
-                    </div>
-                </div>
-            );
-
-            if (status === "taking") return (
-                <div className="min-h-screen bg-slate-50 p-6">
-                    <div className="max-w-3xl mx-auto">
-                        <div className="bg-white p-4 rounded shadow mb-4 sticky top-0 z-10 flex justify-between">
-                            <span className="font-bold">{activeExam.title}</span>
-                            <span className={`text-xs px-2 py-1 rounded ${cheatCount > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>{cheatCount > 0 ? 'Flagged' : 'Secure'}</span>
-                        </div>
-                        {activeExam.questions.map((q, i) => (
-                            <div key={i} className="bg-white p-6 rounded shadow mb-4">
-                                <p className="font-bold mb-2">{i+1}. {q.text}</p>
-                                {q.type === 'multiple_choice' ? q.options.map((o, x) => <label key={x} className="block mb-2"><input type="radio" name={'q'+i} onChange={()=>setAnswers({...answers, [q.id]:o})}/> {o}</label>) 
-                                : <textarea className="w-full border p-2 rounded" onChange={e=>setAnswers({...answers, [q.id]:e.target.value})}/>}
+                return (
+                    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+                        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 relative">
+                            <button onClick={onBack} className="absolute top-4 left-4 text-slate-400 hover:text-slate-600"><Icon size={24}><path d="m15 18-6-6 6-6"/></Icon></button>
+                            <div className="text-center mb-8">
+                                <h2 className="text-2xl font-bold text-slate-800">Student Portal</h2>
+                                <p className="text-slate-500">Find your exam below</p>
                             </div>
-                        ))}
-                        <button onClick={submit} className="w-full bg-indigo-600 text-white p-4 rounded font-bold">Submit</button>
-                    </div>
-                </div>
-            );
 
-            return <div className="p-10 text-center"><h1>Submitted!</h1><button onClick={() => window.location.reload()}>Reset</button></div>;
-        };
-
-        // 5. TEACHER DASHBOARD (Main)
-        const TeacherDashboard = ({ user, onLogout }) => {
-            const [questions, setQuestions] = useState([]);
-            const [examTitle, setExamTitle] = useState("Midterm Examination");
-            const [activeType, setActiveType] = useState("multiple_choice");
-            const [view, setView] = useState("builder");
-            const [currentQ, setCurrentQ] = useState({ text: "", options: ["","","",""], correctAnswer: "" });
-            const [isPublished, setIsPublished] = useState(false);
-
-            useEffect(() => {
-                db.ref('active_exam').on('value', s => setIsPublished(!!s.val()));
-            }, []);
-
-            const publishExam = () => {
-                if (questions.length === 0) return alert("Add questions first.");
-                if (confirm("Publish to students?")) {
-                    db.ref('active_exam').set({ title: examTitle, questions, createdAt: new Date().toISOString() });
-                }
-            };
-
-            const closeExam = () => {
-                if (confirm("Close exam?")) db.ref('active_exam').remove();
-            };
-
-            const addQuestion = () => {
-                if(!currentQ.text) return;
-                // Validation: Ensure correct answer is set
-                if (activeType === 'multiple_choice' && !currentQ.correctAnswer) {
-                    return alert("Please select the correct answer option.");
-                }
-                if (activeType === 'identification' && !currentQ.correctAnswer) {
-                    return alert("Please type the correct answer key.");
-                }
-
-                setQuestions([...questions, { ...currentQ, id: Date.now(), type: activeType }]);
-                setCurrentQ({ text: "", options: ["","","",""], correctAnswer: "" });
-            };
-
-            const setOption = (idx, val) => {
-                const n = [...currentQ.options]; 
-                n[idx] = val; 
-                // If this option was the correct answer, update the correct answer text too to match
-                if (currentQ.correctAnswer === currentQ.options[idx]) {
-                     setCurrentQ({...currentQ, options: n, correctAnswer: val});
-                } else {
-                     setCurrentQ({...currentQ, options: n});
-                }
-            };
-
-            if (view === "results") return <ResultsList onClose={() => setView("builder")} />;
-
-            return (
-                <div className="max-w-6xl mx-auto p-4 md:p-6 animate-fade-in text-slate-800">
-                    <header className="mb-8 flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-2"><ShieldAlert className="text-indigo-600" /> FocusExam</h1>
-                            <p className="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded inline-block mt-1">Admin: {user.email}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            {isPublished ? (
-                                <button onClick={closeExam} className="bg-red-100 text-red-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-red-200 animate-pulse"><X size={18}/> Close Exam</button>
-                            ) : (
-                                <button onClick={publishExam} className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg hover:bg-green-700"><CloudUpload size={18}/> Publish</button>
-                            )}
-                            <div className="h-10 w-px bg-slate-200 mx-2"></div>
-                            <button onClick={() => setView("results")} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 flex items-center gap-2"><Database size={18}/> Results</button>
-                            <button onClick={onLogout} className="text-slate-400 hover:text-red-500 p-2"><Trash2 size={20}/></button>
-                        </div>
-                    </header>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-1 space-y-6">
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <h2 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><FileText size={18}/> Exam Config</h2>
-                                <input className="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-indigo-500 transition-colors" value={examTitle} onChange={e => setExamTitle(e.target.value)} placeholder="Exam Title" />
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Step 1: Select Year</label>
+                                    <select className="w-full p-3 border rounded-lg bg-slate-50" value={selectedYear} onChange={e => setSelectedYear(e.target.value)}>
+                                        <option value="">-- Choose Year --</option>
+                                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Step 2: Select Subject</label>
+                                    <select className="w-full p-3 border rounded-lg bg-slate-50" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)} disabled={!selectedYear}>
+                                        <option value="">-- Choose Subject --</option>
+                                        {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
                             </div>
-                            
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <h2 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><PlusCircle size={18}/> Add Question</h2>
-                                <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-lg">
-                                    {['multiple_choice', 'identification', 'essay'].map(t => (
-                                        <button key={t} onClick={() => setActiveType(t)} className={`flex-1 py-2 text-xs font-bold uppercase rounded-md transition-all ${activeType === t ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{t.replace('_', ' ').substring(0, 8)}</button>
+
+                            {selectedYear && selectedSubject && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Available Exams</label>
+                                    {filteredExams.length === 0 ? <p className="text-slate-400 text-center py-4 bg-slate-50 rounded">No active exams found.</p> : 
+                                    filteredExams.map(ex => (
+                                        <button key={ex.id} onClick={() => { setActiveExam(ex); setStatus('ready'); }} className="w-full p-4 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 rounded-xl text-left flex justify-between items-center group">
+                                            <span className="font-bold text-indigo-900">{ex.title}</span>
+                                            <Icons.Play className="text-indigo-400 group-hover:text-indigo-600"/>
+                                        </button>
                                     ))}
                                 </div>
-                                
-                                <div className="space-y-3">
-                                    <textarea className="w-full p-3 border border-slate-300 rounded-lg h-24 focus:outline-none focus:border-indigo-500 text-sm resize-none" placeholder="Enter question text here..." value={currentQ.text} onChange={e => setCurrentQ({...currentQ, text: e.target.value})}></textarea>
-                                    
-                                    {/* DYNAMIC INPUTS BASED ON TYPE */}
-                                    {activeType === 'multiple_choice' && (
-                                        <div className="space-y-2">
-                                            <p className="text-xs text-slate-400 font-bold uppercase">Options (Select correct one)</p>
-                                            {currentQ.options.map((opt, i) => (
-                                                <div key={i} className="flex items-center gap-2">
-                                                    <input 
-                                                        type="radio" 
-                                                        name="correct_opt" 
-                                                        className="w-4 h-4 text-indigo-600 cursor-pointer"
-                                                        checked={currentQ.correctAnswer === opt && opt !== ""}
-                                                        onChange={() => setCurrentQ({...currentQ, correctAnswer: opt})}
-                                                        disabled={!opt}
-                                                    />
-                                                    <input className="flex-1 p-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder={`Option ${i+1}`} value={opt} onChange={e => setOption(i, e.target.value)}/>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {activeType === 'identification' && (
-                                        <div>
-                                            <label className="text-xs text-slate-400 font-bold uppercase block mb-1">Correct Answer Key</label>
-                                            <input 
-                                                className="w-full p-2 border border-green-300 bg-green-50 rounded text-sm focus:outline-none focus:border-green-500" 
-                                                placeholder="Type the exact correct answer..." 
-                                                value={currentQ.correctAnswer} 
-                                                onChange={e => setCurrentQ({...currentQ, correctAnswer: e.target.value})}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {activeType === 'essay' && (
-                                        <div>
-                                            <label className="text-xs text-slate-400 font-bold uppercase block mb-1">Model Answer (Optional)</label>
-                                            <textarea 
-                                                className="w-full p-2 border border-slate-200 bg-slate-50 rounded text-sm h-16 focus:outline-none" 
-                                                placeholder="Key points to look for..." 
-                                                value={currentQ.correctAnswer} 
-                                                onChange={e => setCurrentQ({...currentQ, correctAnswer: e.target.value})}
-                                            ></textarea>
-                                        </div>
-                                    )}
-
-                                    <button onClick={addQuestion} className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 flex items-center justify-center gap-2 transition-colors mt-2">Add to Exam</button>
-                                </div>
-                            </div>
+                            )}
                         </div>
+                    </div>
+                );
+            }
 
-                        <div className="lg:col-span-2">
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]">
-                                <h3 className="font-bold border-b pb-2 mb-4 text-slate-500">Live Preview</h3>
-                                {questions.map((q, i) => (
-                                    <div key={q.id} className="p-4 border rounded-lg mb-3 relative group">
-                                        <button onClick={() => setQuestions(questions.filter(x => x.id !== q.id))} className="absolute top-2 right-2 text-red-300 hover:text-red-500"><Trash2 size={16}/></button>
-                                        <p className="font-bold mb-2 text-slate-800">{i+1}. {q.text}</p>
-                                        
-                                        {/* PREVIEW RENDERING */}
-                                        {q.type === 'multiple_choice' && (
-                                            <div className="space-y-1 pl-4 border-l-2 border-slate-100">
-                                                {q.options.map((o, idx) => (
-                                                    <div key={idx} className={`text-sm px-2 py-1 rounded flex items-center gap-2 ${q.correctAnswer === o ? 'bg-green-100 text-green-800 font-bold' : 'text-slate-500'}`}>
-                                                        {q.correctAnswer === o && <Check size={14}/>}
-                                                        {String.fromCharCode(65+idx)}. {o}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                        {q.type === 'identification' && (
-                                            <div className="mt-2 text-xs bg-green-50 text-green-700 px-3 py-1 rounded w-fit border border-green-100">
-                                                <strong>Key:</strong> {q.correctAnswer}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                                {questions.length === 0 && <p className="text-slate-400 text-center mt-20">Start adding questions on the left.</p>}
-                            </div>
-                        </div>
+            // VIEW: READY
+            if (status === 'ready') return (
+                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+                    <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
+                        <button onClick={() => setStatus('lobby')} className="text-slate-400 text-sm mb-4">Back</button>
+                        <h2 className="text-2xl font-bold text-green-700 mb-1">Start Exam</h2>
+                        <p className="text-slate-600 mb-6">{activeExam.title} - {activeExam.subject}</p>
+                        <input className="w-full p-3 border rounded-lg mb-4 focus:ring-2 focus:ring-green-500 outline-none" placeholder="Enter Full Name" value={studentName} onChange={e => setStudentName(e.target.value)} />
+                        <button onClick={() => { if(studentName) setStatus('taking'); else alert("Name required"); }} className="w-full bg-green-600 text-white p-3 rounded-lg font-bold shadow-lg hover:bg-green-700">Begin Exam</button>
                     </div>
                 </div>
             );
+
+            // VIEW: TAKING
+            if (status === 'taking') return (
+                <div className="min-h-screen bg-slate-50 p-6">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="bg-white p-4 rounded shadow mb-6 sticky top-0 z-10 flex justify-between border-b-4 border-indigo-500 shadow-md">
+                            <div>
+                                <span className="font-bold text-lg text-slate-800 block">{activeExam.title}</span>
+                                <span className="text-xs text-slate-500">{studentName} • {activeExam.subject}</span>
+                            </div>
+                            <div className={`px-3 py-1 rounded h-fit text-xs font-bold ${cheatCount>0?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{cheatCount>0?'Flagged':'Secure'}</div>
+                        </div>
+                        {activeExam.questions.map((q, i) => (
+                            <div key={i} className="bg-white p-6 rounded-xl shadow-sm mb-4">
+                                <p className="font-bold mb-3 text-lg text-slate-800">{i+1}. {q.text}</p>
+                                {q.type === 'multiple_choice' ? q.options.map((o, x) => <label key={x} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 mb-2 cursor-pointer"><input type="radio" name={'q'+i} onChange={()=>setAnswers({...answers, [q.id]:o})}/> {o}</label>)
+                                : <textarea className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Answer..." rows="3" onChange={e=>setAnswers({...answers, [q.id]:e.target.value})}/>}
+                            </div>
+                        ))}
+                        <button onClick={submit} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-transform active:scale-95">Submit Final Answers</button>
+                    </div>
+                </div>
+            );
+
+            return <div className="min-h-screen flex items-center justify-center flex-col"><div className="bg-green-100 p-6 rounded-full mb-4 text-green-600"><Icons.Check size={64}/></div><h1 className="text-2xl font-bold">Exam Submitted!</h1><button onClick={()=>window.location.reload()} className="mt-4 underline text-blue-600">Return Home</button></div>;
         };
 
-        // --- APP CONTROLLER ---
+        // 5. LANDING PAGE
+        const LandingPage = ({ onSelectRole }) => (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+                <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+                    <div className="bg-slate-900 p-10 flex flex-col justify-center text-white md:w-5/12">
+                        <div className="mb-6"><Icons.Shield size={64} className="text-indigo-400"/></div>
+                        <h1 className="text-4xl font-bold mb-4">FocusExam</h1>
+                        <p className="text-slate-300 text-lg leading-relaxed">A secure, integrity-focused testing platform for modern education.</p>
+                    </div>
+                    <div className="p-10 flex flex-col justify-center md:w-7/12">
+                        <h2 className="text-2xl font-bold text-slate-800 mb-8 text-center">Select Your Role</h2>
+                        <div className="space-y-4">
+                            <button onClick={() => onSelectRole('teacher')} className="w-full flex items-center p-4 border-2 border-slate-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group text-left">
+                                <div className="bg-indigo-100 p-3 rounded-full mr-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><Icons.Users size={24}/></div>
+                                <div><h3 className="font-bold text-lg text-slate-800">I am a Teacher</h3><p className="text-slate-500 text-sm">Create and assign exams</p></div>
+                            </button>
+                            <button onClick={() => onSelectRole('student')} className="w-full flex items-center p-4 border-2 border-slate-200 rounded-xl hover:border-green-600 hover:bg-green-50 transition-all group text-left">
+                                <div className="bg-green-100 p-3 rounded-full mr-4 group-hover:bg-green-600 group-hover:text-white transition-colors"><Icons.Book size={24}/></div>
+                                <div><h3 className="font-bold text-lg text-slate-800">I am a Student</h3><p className="text-slate-500 text-sm">Take assigned exams</p></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- MAIN APP CONTROLLER ---
         const App = () => {
             const [page, setPage] = useState('landing');
             const [user, setUser] = useState(null);
@@ -478,21 +543,15 @@
                         setPage('teacher');
                     } else {
                         auth.signOut();
-                        alert("Access Denied: You are not a registered teacher.");
+                        alert("Access Denied: Not an authorized teacher account.");
                     }
                 }).catch(e => alert(e.message));
             };
 
-            if (page === 'landing') return <LandingPage onSelectRole={role => {
-                if (role === 'teacher') handleTeacherLogin();
-                else setPage('student');
-            }} />;
-
+            if (page === 'landing') return <LandingPage onSelectRole={r => r === 'teacher' ? handleTeacherLogin() : setPage('student')} />;
             if (page === 'student') return <StudentPortal onBack={() => setPage('landing')} />;
-
             if (page === 'teacher' && user) return <TeacherDashboard user={user} onLogout={() => { auth.signOut(); setPage('landing'); }} />;
-
-            return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading...</div>;
+            return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading FocusExam...</div>;
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
