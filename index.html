@@ -341,7 +341,9 @@
 
             const addQuestion = () => {
                 if(!curQ.text) return;
-                if ((qType === 'multiple_choice' || qType === 'identification' || qType === 'true_false') && !curQ.correctAnswer) return alert("Set correct answer.");
+                // Removed requirement for correctAnswer in Essay and optional logic for Identification
+                if ((qType === 'multiple_choice' || qType === 'true_false') && !curQ.correctAnswer) return alert("Set correct answer.");
+                
                 const newQ = { ...curQ, id: editingQId || Date.now(), type: qType };
                 if (editingQId) {
                     setNewExam(p => ({ ...p, questions: p.questions.map(q => q.id === editingQId ? newQ : q) }));
@@ -387,7 +389,7 @@
                                                     <p className="font-medium text-slate-800 mb-2 text-sm">{q.text}</p>
                                                     {q.type === 'multiple_choice' && <div className="space-y-1 border-l-2 pl-2">{q.options.map((o, idx) => <div key={idx} className={`text-xs ${q.correctAnswer === o ? 'text-green-600 font-bold' : 'text-slate-400'}`}>{String.fromCharCode(65+idx)}. {o}</div>)}</div>}
                                                     {q.type === 'true_false' && <div className="text-xs font-bold text-green-600">Answer: {q.correctAnswer}</div>}
-                                                    {q.type === 'identification' && <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded w-fit">KEY: {q.correctAnswer}</div>}
+                                                    {q.type === 'identification' && q.correctAnswer && <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded w-fit">KEY: {q.correctAnswer}</div>}
                                                 </div>
                                             </div>
                                         </div>
@@ -488,10 +490,17 @@
 
                                             {qType === 'identification' && (
                                                 <div className="mb-4">
-                                                    <label className="text-xs text-green-600 font-bold uppercase block mb-2">Correct Answer Key (Auto-Checked)</label>
-                                                    <input className="w-full p-3 border border-green-200 bg-green-50/50 rounded-xl text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="Type the EXACT correct answer..." value={curQ.correctAnswer} onChange={e => setCurQ({...curQ, correctAnswer: e.target.value})}/>
+                                                    <label className="text-xs text-slate-500 font-bold uppercase block mb-2">Correct Answer Key (Optional)</label>
+                                                    <input 
+                                                        className="w-full p-3 border border-slate-200 bg-slate-50 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none" 
+                                                        placeholder="Type the exact correct answer (or leave empty for manual grading)" 
+                                                        value={curQ.correctAnswer} 
+                                                        onChange={e => setCurQ({...curQ, correctAnswer: e.target.value})}
+                                                    />
                                                 </div>
                                             )}
+
+                                            {/* Essay has no pre-answer input, just the question text above */}
 
                                             <div className="flex gap-3 pt-2">
                                                 {editingQId && <button onClick={() => {setEditingQId(null); setCurQ({ text: "", options: ["","","",""], correctAnswer: "" });}} className="px-6 py-2 rounded-lg font-bold text-slate-500">Cancel</button>}
@@ -533,20 +542,27 @@
             const calculateScore = (submission) => {
                 if (!examData || !examData.questions) return "N/A";
                 let score = 0;
-                let max = examData.questions.length;
+                let max = 0; // Only count questions that have a defined correct answer
                 
                 examData.questions.forEach(q => {
+                    // Skip essay in auto-grading count
+                    if(q.type === 'essay') return;
+
+                    // For identification, skip if no answer key was provided
+                    if(q.type === 'identification' && !q.correctAnswer) return;
+                    
+                    max++;
                     const studentAns = submission.answers[q.id];
                     if (!studentAns) return;
                     
                     if (q.type === 'multiple_choice' || q.type === 'true_false') {
                         if (studentAns === q.correctAnswer) score++;
                     } else if (q.type === 'identification') {
-                        if (studentAns.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) score++;
+                        // Case-insensitive check
+                        if (q.correctAnswer && studentAns.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) score++;
                     }
-                    // Essay is excluded from auto-grading
                 });
-                return `${score}/${max}`;
+                return max > 0 ? `${score}/${max}` : "Needs Manual Review";
             };
 
             return (
@@ -836,15 +852,23 @@
                         <button onClick={() => setStatus('lobby')} className="text-slate-400 text-sm mb-4">Back</button>
                         <h2 className="text-2xl font-bold text-slate-800">{activeExam.title}</h2>
                         <p className="text-slate-500 mb-6">Teacher: {activeExam.teacherName}</p>
+                        
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-amber-800 text-sm">
                              <div className="flex items-center gap-2 font-bold mb-1"><Icons.AlertTriangle size={16}/> ACADEMIC INTEGRITY WARNING</div>
                              <p>Switching tabs is monitored.</p>
                         </div>
-                        <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" className="w-5 h-5 accent-green-600" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/>
-                            <span className="text-sm font-medium text-slate-700">I agree to the terms.</span>
-                        </label>
-                        <button onClick={() => { if(agreed) setStatus('taking'); else alert("Please agree."); }} className={`w-full mt-4 p-4 rounded-xl font-bold text-lg shadow-lg transition-all ${agreed ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Start Exam</button>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-500 mb-1">Full Name</label>
+                                <input className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="Required" />
+                            </div>
+                            <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" className="w-5 h-5 accent-green-600" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/>
+                                <span className="text-sm font-medium text-slate-700">I understand that leaving this tab will be flagged.</span>
+                            </label>
+                            <button onClick={() => { if(studentName && agreed) setStatus('taking'); else alert("Please agree."); }} className={`w-full mt-4 p-4 rounded-xl font-bold text-lg shadow-lg transition-all ${agreed ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Start Exam</button>
+                        </div>
                     </div>
                 </div>
             );
@@ -853,7 +877,7 @@
                 <div className="min-h-screen bg-slate-50 p-4 md:p-8">
                     <div className="max-w-4xl mx-auto">
                         <div className="bg-white p-5 rounded-2xl shadow-sm border mb-8 sticky top-4 z-20 flex justify-between items-center">
-                            <div><h1 className="font-bold text-xl">{activeExam.title}</h1><p className="text-sm text-slate-500">{loginUser.displayName}</p></div>
+                            <div><h1 className="font-bold text-xl">{activeExam.title}</h1><p className="text-sm text-slate-500">{studentName}</p></div>
                             <div className={`px-4 py-2 rounded-xl font-bold text-sm ${cheatCount>0?'bg-red-50 text-red-600':'bg-green-50 text-green-600'}`}>{cheatCount>0?'Flagged':'Secure'}</div>
                         </div>
                         {renderStudentSections()}
