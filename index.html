@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusExam Teacher Dashboard</title>
+    <title>FocusExam Platform</title>
     
+    <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- 4. Firebase SDKs (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
         .animate-fade-in { animation: fadeIn 0.3s ease-in; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body>
@@ -30,28 +38,29 @@
         const Icon = ({ size = 24, color = "currentColor", children, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>
         );
-        const ShieldAlert = (p) => <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="M12 8v4" /><path d="M12 16h.01" /></Icon>;
-        const List = (p) => <Icon {...p}><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></Icon>;
-        const FileText = (p) => <Icon {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></Icon>;
-        const Hash = (p) => <Icon {...p}><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></Icon>;
-        const Type = (p) => <Icon {...p}><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" x2="15" y1="20" y2="20" /><line x1="12" x2="12" y1="4" y2="20" /></Icon>;
-        const PlusCircle = (p) => <Icon {...p}><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></Icon>;
-        const Trash2 = (p) => <Icon {...p}><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></Icon>;
-        const Play = (p) => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3" /></Icon>;
-        const Download = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></Icon>;
-        const AlertCircle = (p) => <Icon {...p}><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></Icon>;
-        const CheckCircle = (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
-        const AlertTriangle = (p) => <Icon {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></Icon>;
-        const LogIn = (p) => <Icon {...p}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></Icon>;
-        const Database = (p) => <Icon {...p}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></Icon>;
-        const X = (p) => <Icon {...p}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>;
-        const Code = (p) => <Icon {...p}><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></Icon>;
-        const LogOut = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></Icon>;
-        const CloudUpload = (p) => <Icon {...p}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M12 12v9" /><path d="m16 16-4-4-4 4" /></Icon>;
-        const GraduationCap = (p) => <Icon {...p}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></Icon>;
-        const Radio = (p) => <Icon {...p}><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" /><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" /><circle cx="12" cy="12" r="2" /></Icon>;
+        const ShieldAlert = (props) => <Icon {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="M12 8v4" /><path d="M12 16h.01" /></Icon>;
+        const List = (props) => <Icon {...props}><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></Icon>;
+        const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></Icon>;
+        const Hash = (props) => <Icon {...props}><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></Icon>;
+        const Type = (props) => <Icon {...props}><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" x2="15" y1="20" y2="20" /><line x1="12" x2="12" y1="4" y2="20" /></Icon>;
+        const PlusCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></Icon>;
+        const Trash2 = (props) => <Icon {...props}><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></Icon>;
+        const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3" /></Icon>;
+        const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></Icon>;
+        const AlertCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
+        const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></Icon>;
+        const LogIn = (props) => <Icon {...props}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></Icon>;
+        const Database = (props) => <Icon {...props}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></Icon>;
+        const X = (props) => <Icon {...props}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>;
+        const Code = (props) => <Icon {...props}><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></Icon>;
+        const User = (props) => <Icon {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Icon>;
+        const CloudUpload = (props) => <Icon {...props}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M12 12v9" /><path d="m16 16-4-4-4 4" /></Icon>;
+        const GraduationCap = (props) => <Icon {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></Icon>;
+        const Radio = (props) => <Icon {...props}><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" /><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" /><circle cx="12" cy="12" r="2" /></Icon>;
+        const Check = (props) => <Icon {...props}><polyline points="20 6 9 17 4 12" /></Icon>;
 
-        // --- CONFIG ---
+        // --- FIREBASE CONFIGURATION ---
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyCrpCFcwF9TtVMOzi2zNJYv-IVYKENC_i4",
             authDomain: "gnhs-online-exam-solution.firebaseapp.com",
@@ -63,250 +72,145 @@
             measurementId: "G-RSTERRCZ19"
         };
 
+        // --- AUTHORIZED ADMIN EMAILS ---
         const AUTHORIZED_TEACHERS = [
             "alvin.alfonso1262@gmail.com",
             "alvin.alfonso2222@gmail.com",
             "alvina.rhss@gmail.com"
         ];
 
-        // Init Firebase
-        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+        }
         const auth = firebase.auth();
         const db = firebase.database();
 
         // --- COMPONENTS ---
 
-        // 1. RESULTS LIST
-        const ResultsList = ({ onClose }) => {
-            const [submissions, setSubmissions] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
-
-            useEffect(() => {
-                const subRef = db.ref('submissions');
-                const listener = subRef.on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const subList = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
-                        subList.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-                        setSubmissions(subList);
-                    } else {
-                        setSubmissions([]);
-                    }
-                    setLoading(false);
-                }, (err) => {
-                    console.error("Firebase Read Error:", err);
-                    setError("Permission Denied or Network Error.");
-                    setLoading(false);
-                });
-                return () => subRef.off('value', listener);
-            }, []);
-
+        // 1. LANDING PAGE
+        const LandingPage = ({ onSelectRole }) => {
             return (
-                <div className="max-w-5xl mx-auto p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><Database/> Results</h2>
-                        <button onClick={onClose} className="text-slate-500 hover:text-slate-800">Close</button>
-                    </div>
-                    {loading && <p>Loading...</p>}
-                    {error && <p className="text-red-500">{error}</p>}
-                    {!loading && !error && (
-                        <div className="bg-white rounded shadow overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-100 border-b">
-                                    <tr>
-                                        <th className="p-3">Student</th>
-                                        <th className="p-3">Exam</th>
-                                        <th className="p-3">Integrity</th>
-                                        <th className="p-3">Time</th>
-                                        <th className="p-3">Data</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {submissions.map(sub => (
-                                        <tr key={sub.id} className="border-b hover:bg-slate-50">
-                                            <td className="p-3 font-medium">{sub.studentName}</td>
-                                            <td className="p-3 text-sm">{sub.examTitle}</td>
-                                            <td className="p-3">
-                                                <span className={`px-2 py-1 rounded text-xs ${sub.cheatStats?.count > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                                    {sub.cheatStats?.count || 0} Flags
-                                                </span>
-                                            </td>
-                                            <td className="p-3 text-sm">{new Date(sub.submittedAt).toLocaleTimeString()}</td>
-                                            <td className="p-3">
-                                                <button onClick={() => alert(JSON.stringify(sub.answers, null, 2))} className="text-blue-600 text-xs underline">Answers</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {submissions.length === 0 && <tr><td colSpan="5" className="p-4 text-center text-gray-400">No results found.</td></tr>}
-                                </tbody>
-                            </table>
+                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+                    <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+                        <div className="bg-slate-900 p-10 flex flex-col justify-center text-white md:w-5/12">
+                            <div className="mb-6"><ShieldAlert size={64} className="text-indigo-400"/></div>
+                            <h1 className="text-4xl font-bold mb-4">FocusExam</h1>
+                            <p className="text-slate-300 text-lg leading-relaxed">
+                                A secure, integrity-focused testing platform for modern education.
+                            </p>
                         </div>
-                    )}
+                        <div className="p-10 flex flex-col justify-center md:w-7/12">
+                            <h2 className="text-2xl font-bold text-slate-800 mb-8 text-center">Select Your Role</h2>
+                            <div className="space-y-4">
+                                <button onClick={() => onSelectRole('teacher')} className="w-full flex items-center p-4 border-2 border-slate-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group text-left">
+                                    <div className="bg-indigo-100 p-3 rounded-full mr-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><LogIn size={24}/></div>
+                                    <div><h3 className="font-bold text-lg text-slate-800">I am a Teacher</h3><p className="text-slate-500 text-sm">Create and assign exams</p></div>
+                                </button>
+                                <button onClick={() => onSelectRole('student')} className="w-full flex items-center p-4 border-2 border-slate-200 rounded-xl hover:border-green-600 hover:bg-green-50 transition-all group text-left">
+                                    <div className="bg-green-100 p-3 rounded-full mr-4 group-hover:bg-green-600 group-hover:text-white transition-colors"><GraduationCap size={24}/></div>
+                                    <div><h3 className="font-bold text-lg text-slate-800">I am a Student</h3><p className="text-slate-500 text-sm">Take assigned exams</p></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
         };
 
-        // 2. DOWNLOAD HELPER
-        const downloadHtmlFile = (examTitle, questions) => {
-            const embeddedData = JSON.stringify(questions);
-            const embeddedConfig = JSON.stringify(FIREBASE_CONFIG);
-            const scriptEnd = "<\/script>"; 
-            
-            const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${examTitle}</title>
-<script src="https://cdn.tailwindcss.com">${scriptEnd}
-<script src="https://unpkg.com/react@18/umd/react.development.js">${scriptEnd}
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js">${scriptEnd}
-<script src="https://unpkg.com/@babel/standalone/babel.min.js">${scriptEnd}
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">${scriptEnd}
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js">${scriptEnd}
-<style>body{font-family:sans-serif;background:#f8fafc}.fade{animation:f .3s ease-in}@keyframes f{from{opacity:0}to{opacity:1}}</style>
-</head><body><div id="root"></div><script type="text/babel">
-const {useState,useEffect}=React;
-const Icon=({size=24,color="currentColor",children,...p})=><svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>{children}</svg>;
-const AlertTriangle=(p)=><Icon {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></Icon>;
-const CheckCircle=(p)=><Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
-const firebaseConfig=${embeddedConfig};
-if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
-const EXAM_DATA={title:"${examTitle}",questions:${embeddedData}};
-const StudentExam=()=>{
-const [n,setN]=useState("");const [ans,setAns]=useState({});const [cc,setCc]=useState(0);const [st,setSt]=useState("active");
-useEffect(()=>{
- const h=()=>{if(document.hidden&&st==="active"){setCc(c=>c+1);alert("Warning: Focus Lost logged.")}};
- document.addEventListener("visibilitychange",h);return()=>document.removeEventListener("visibilitychange",h);
-},[st]);
-const sub=()=>{
- if(!n)return alert("Name required");if(!confirm("Submit?"))return;
- setSt("submitting");
- db.ref('submissions').push({studentName:n,answers:ans,cheatStats:{count:cc},submittedAt:new Date().toISOString(),examTitle:EXAM_DATA.title})
- .then(()=>setSt("submitted")).catch(e=>{alert(e.message);setSt("active")});
-};
-if(st==="submitted")return <div className="p-10 text-center"><div className="text-green-500 text-4xl mb-2">✓</div><h1 className="text-2xl font-bold">Submitted</h1><p>Thank you, {n}.</p></div>;
-return(
- <div className="max-w-2xl mx-auto p-6 bg-white min-h-screen">
-  <div className="mb-6 border-b pb-4"><h1 className="text-xl font-bold">{EXAM_DATA.title}</h1></div>
-  <div className="mb-6"><label className="block text-sm font-bold mb-1">Your Name</label><input className="w-full p-2 border rounded" value={n} onChange={e=>setN(e.target.value)}/></div>
-  {EXAM_DATA.questions.map((q,i)=>(
-   <div key={q.id} className="mb-6 p-4 border rounded bg-slate-50">
-    <p className="font-medium mb-3">{i+1}. {q.text}</p>
-    {q.type==='multiple_choice'?q.options.map((o,x)=><label key={x} className="block mb-2"><input type="radio" name={'q'+q.id} onChange={()=>setAns({...ans,[q.id]:o})}/> {o}</label>)
-    :<textarea className="w-full p-2 border rounded" onChange={e=>setAns({...ans,[q.id]:e.target.value})}/>}
-   </div>
-  ))}
-  <button onClick={sub} disabled={st==='submitting'} className="w-full bg-blue-600 text-white p-3 rounded font-bold">{st==='submitting'?'Uploading...':'Submit Exam'}</button>
- </div>
-)};
-const root=ReactDOM.createRoot(document.getElementById('root'));root.render(<StudentExam/>);
-${scriptEnd}</body></html>`;
-
-            try {
-                const blob = new Blob([htmlContent], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${examTitle.replace(/\s+/g, '_')}_Exam.html`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } catch (e) {
-                alert("Download failed.");
-            }
-        };
-
-        // 3. TEACHER DASHBOARD
-        const TeacherDashboard = ({ user, onLogout }) => {
-            const [questions, setQuestions] = useState([]);
-            const [examTitle, setExamTitle] = useState("Midterm Examination");
-            const [activeType, setActiveType] = useState("multiple_choice");
-            const [view, setView] = useState("builder");
-            const [currentQ, setCurrentQ] = useState({ text: "", options: ["","","",""] });
-            const [isPublished, setIsPublished] = useState(false);
-
-            useEffect(() => {
-                const checkRef = db.ref('active_exam');
-                const listener = checkRef.on('value', s => setIsPublished(!!s.val()), err => console.log("Read error (expected if student):", err));
-                return () => checkRef.off('value', listener);
-            }, []);
-
-            const publishExam = () => {
-                if (questions.length === 0) return alert("Add questions first.");
-                if (confirm("Publish this exam? Students will see it immediately.")) {
-                    db.ref('active_exam').set({
-                        title: examTitle,
-                        questions: questions,
-                        createdAt: new Date().toISOString()
-                    }).catch(e => alert("Error: " + e.message));
-                }
+        // 2. TEACHER LOGIN
+        const TeacherLogin = ({ onSuccess, onBack }) => {
+            const handleGoogleLogin = () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider)
+                    .then((result) => {
+                        if (AUTHORIZED_TEACHERS.includes(result.user.email)) {
+                            onSuccess(result.user);
+                        } else {
+                            auth.signOut();
+                            alert("⛔ Access Denied: Unauthorized Teacher Email.");
+                        }
+                    })
+                    .catch((error) => alert("Login failed: " + error.message));
             };
-
-            const closeExam = () => {
-                if (confirm("Close exam?")) {
-                    db.ref('active_exam').remove().catch(e => alert(e.message));
-                }
-            };
-
-            const addQuestion = () => {
-                if(!currentQ.text) return;
-                setQuestions([...questions, { ...currentQ, id: Date.now(), type: activeType }]);
-                setCurrentQ({ text: "", options: ["","","",""] });
-            };
-
-            if (view === "results") return <ResultsList onClose={() => setView("builder")} />;
 
             return (
-                <div className="max-w-6xl mx-auto p-4 md:p-6 animate-fade-in text-slate-800">
-                    <header className="mb-8 flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-2"><ShieldAlert className="text-indigo-600" /> FocusExam</h1>
-                            <p className="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded inline-block mt-1">Admin: {user.email}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            {isPublished ? (
-                                <button onClick={closeExam} className="bg-red-100 text-red-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-red-200"><X size={18}/> Close Exam</button>
-                            ) : (
-                                <button onClick={publishExam} className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg hover:bg-green-700"><CloudUpload size={18}/> Publish</button>
-                            )}
-                            <div className="h-10 w-px bg-slate-200 mx-2"></div>
-                            <button onClick={() => setView("results")} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 flex items-center gap-2"><Database size={18}/> Results</button>
-                            <button onClick={() => downloadHtmlFile(examTitle, questions)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 flex items-center gap-2"><Download size={18}/> HTML</button>
-                            <button onClick={onLogout} className="text-slate-400 hover:text-red-500 p-2"><Trash2 size={20}/></button>
-                        </div>
-                    </header>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-1 space-y-6">
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <input className="w-full p-2 border rounded font-bold text-lg mb-4" value={examTitle} onChange={e => setExamTitle(e.target.value)} />
-                                <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded">
-                                    {['multiple_choice', 'essay'].map(t => (
-                                        <button key={t} onClick={() => setActiveType(t)} className={`flex-1 py-1 text-xs font-bold uppercase rounded ${activeType === t ? 'bg-white shadow' : 'text-slate-500'}`}>{t.replace('_', ' ')}</button>
-                                    ))}
-                                </div>
-                                <textarea className="w-full p-3 border rounded-lg h-24 mb-3 text-sm" placeholder="Question..." value={currentQ.text} onChange={e => setCurrentQ({...currentQ, text: e.target.value})}></textarea>
-                                {activeType === 'multiple_choice' && currentQ.options.map((opt, i) => (
-                                    <input key={i} className="w-full p-2 border rounded text-sm mb-2" placeholder={`Option ${i+1}`} value={opt} onChange={e => { const n = [...currentQ.options]; n[i] = e.target.value; setCurrentQ({...currentQ, options: n}); }}/>
-                                ))}
-                                <button onClick={addQuestion} className="w-full bg-slate-800 text-white py-2 rounded font-bold hover:bg-slate-900 mt-2">Add Question</button>
-                            </div>
-                        </div>
-                        <div className="lg:col-span-2">
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]">
-                                <h3 className="font-bold border-b pb-2 mb-4 text-slate-500">Live Preview ({questions.length})</h3>
-                                {questions.map((q, i) => (
-                                    <div key={q.id} className="p-4 border rounded-lg mb-3 relative group">
-                                        <button onClick={() => setQuestions(questions.filter(x => x.id !== q.id))} className="absolute top-2 right-2 text-red-300 hover:text-red-500">x</button>
-                                        <p className="font-bold mb-2">{i+1}. {q.text}</p>
-                                        {q.type === 'multiple_choice' && <div className="space-y-1 pl-4 border-l-2">{q.options.map((o, idx) => <div key={idx} className="text-sm text-slate-600">{String.fromCharCode(65+idx)}. {o}</div>)}</div>}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                    <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+                        <div className="mx-auto bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 text-indigo-600"><ShieldAlert size={32} /></div>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Teacher Access</h2>
+                        <p className="text-slate-500 mb-6">Restricted to authorized administrators.</p>
+                        <button onClick={handleGoogleLogin} className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 flex items-center justify-center gap-2 mb-4"><Icon size={20}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></Icon> Sign in with Google</button>
+                        <button onClick={onBack} className="text-slate-400 hover:text-slate-600 text-sm">Cancel</button>
                     </div>
+                </div>
+            );
+        };
+
+        // 3. RESULTS LIST
+        const ResultsList = ({ onClose }) => {
+            const [submissions, setSubmissions] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const subRef = db.ref('submissions');
+                subRef.on('value', (s) => {
+                    const data = s.val();
+                    if (data) {
+                        const list = Object.values(data).sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+                        setSubmissions(list);
+                    } else setSubmissions([]);
+                    setLoading(false);
+                });
+                return () => subRef.off();
+            }, []);
+
+            return (
+                <div className="max-w-6xl mx-auto p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Database/> Results</h2>
+                        <button onClick={onClose} className="text-slate-500 hover:text-slate-800">Close</button>
+                    </div>
+                    {loading ? <p>Loading...</p> : (
+                        <div className="bg-white rounded shadow overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-100 border-b">
+                                    <tr>
+                                        <th className="p-3">Student</th>
+                                        <th className="p-3">Score (Auto)</th>
+                                        <th className="p-3">Integrity</th>
+                                        <th className="p-3">Time</th>
+                                        <th className="p-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {submissions.map((s, i) => {
+                                        // Simple Auto-Grading Logic for display
+                                        let score = 0;
+                                        let maxScore = 0;
+                                        if (s.questions) { // Assuming questions snapshot was saved with submission for context, otherwise we assume current exam structure matches which is risky.
+                                            // Ideally, store question snapshot in submission. For now, we skip score if not available or just show answers.
+                                        }
+                                        
+                                        return (
+                                            <tr key={i} className="border-b hover:bg-slate-50">
+                                                <td className="p-3 font-medium">{s.studentName}</td>
+                                                <td className="p-3">
+                                                    {/* Placeholder for auto-grade display if logic exists */}
+                                                    <span className="text-slate-400 italic">View to grade</span>
+                                                </td>
+                                                <td className="p-3"><span className={`px-2 py-1 rounded text-xs ${s.cheatStats?.count > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{s.cheatStats?.count || 0} Flags</span></td>
+                                                <td className="p-3 text-slate-500">{new Date(s.submittedAt).toLocaleString()}</td>
+                                                <td className="p-3">
+                                                    <button onClick={() => alert(JSON.stringify(s.answers, null, 2))} className="text-blue-600 underline">View Answers</button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -329,7 +233,6 @@ ${scriptEnd}</body></html>`;
                 return () => examRef.off('value', listener);
             }, [status]);
 
-            // Cheat detection
             useEffect(() => {
                 if (status !== 'taking') return;
                 const h = () => { if (document.hidden) setCheatCount(c => c + 1); };
@@ -353,10 +256,7 @@ ${scriptEnd}</body></html>`;
                     <div className="bg-white p-8 rounded-xl shadow text-center max-w-md w-full relative">
                         <button onClick={onBack} className="absolute top-4 left-4 text-gray-400">Back</button>
                         <h2 className="text-xl font-bold mb-4 text-slate-700">Student Portal</h2>
-                        <div className="p-6 bg-yellow-50 text-yellow-700 rounded border border-yellow-200 animate-pulse">
-                            Teacher has not assigned an exam yet.
-                        </div>
-                        <p className="text-xs text-gray-400 mt-4">Please wait here. Do not refresh.</p>
+                        <div className="p-6 bg-yellow-50 text-yellow-700 rounded border border-yellow-200 animate-pulse">Teacher has not assigned an exam yet.</div>
                     </div>
                 </div>
             );
@@ -394,19 +294,178 @@ ${scriptEnd}</body></html>`;
             return <div className="p-10 text-center"><h1>Submitted!</h1><button onClick={() => window.location.reload()}>Reset</button></div>;
         };
 
-        // 5. LANDING PAGE
-        const Landing = ({ onSelect }) => (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-                    <ShieldAlert size={48} className="mx-auto text-indigo-600 mb-4"/>
-                    <h1 className="text-3xl font-bold text-slate-800 mb-8">FocusExam</h1>
-                    <button onClick={() => onSelect('teacher')} className="w-full bg-slate-800 text-white p-4 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 hover:bg-slate-900"><LogIn size={20}/> Teacher Login</button>
-                    <button onClick={() => onSelect('student')} className="w-full border-2 border-slate-200 text-slate-700 p-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-slate-50"><GraduationCap size={20}/> Student Portal</button>
-                </div>
-            </div>
-        );
+        // 5. TEACHER DASHBOARD (Main)
+        const TeacherDashboard = ({ user, onLogout }) => {
+            const [questions, setQuestions] = useState([]);
+            const [examTitle, setExamTitle] = useState("Midterm Examination");
+            const [activeType, setActiveType] = useState("multiple_choice");
+            const [view, setView] = useState("builder");
+            const [currentQ, setCurrentQ] = useState({ text: "", options: ["","","",""], correctAnswer: "" });
+            const [isPublished, setIsPublished] = useState(false);
 
-        // 6. MAIN APP
+            useEffect(() => {
+                db.ref('active_exam').on('value', s => setIsPublished(!!s.val()));
+            }, []);
+
+            const publishExam = () => {
+                if (questions.length === 0) return alert("Add questions first.");
+                if (confirm("Publish to students?")) {
+                    db.ref('active_exam').set({ title: examTitle, questions, createdAt: new Date().toISOString() });
+                }
+            };
+
+            const closeExam = () => {
+                if (confirm("Close exam?")) db.ref('active_exam').remove();
+            };
+
+            const addQuestion = () => {
+                if(!currentQ.text) return;
+                // Validation: Ensure correct answer is set
+                if (activeType === 'multiple_choice' && !currentQ.correctAnswer) {
+                    return alert("Please select the correct answer option.");
+                }
+                if (activeType === 'identification' && !currentQ.correctAnswer) {
+                    return alert("Please type the correct answer key.");
+                }
+
+                setQuestions([...questions, { ...currentQ, id: Date.now(), type: activeType }]);
+                setCurrentQ({ text: "", options: ["","","",""], correctAnswer: "" });
+            };
+
+            const setOption = (idx, val) => {
+                const n = [...currentQ.options]; 
+                n[idx] = val; 
+                // If this option was the correct answer, update the correct answer text too to match
+                if (currentQ.correctAnswer === currentQ.options[idx]) {
+                     setCurrentQ({...currentQ, options: n, correctAnswer: val});
+                } else {
+                     setCurrentQ({...currentQ, options: n});
+                }
+            };
+
+            if (view === "results") return <ResultsList onClose={() => setView("builder")} />;
+
+            return (
+                <div className="max-w-6xl mx-auto p-4 md:p-6 animate-fade-in text-slate-800">
+                    <header className="mb-8 flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div>
+                            <h1 className="text-2xl font-bold flex items-center gap-2"><ShieldAlert className="text-indigo-600" /> FocusExam</h1>
+                            <p className="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded inline-block mt-1">Admin: {user.email}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            {isPublished ? (
+                                <button onClick={closeExam} className="bg-red-100 text-red-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-red-200 animate-pulse"><X size={18}/> Close Exam</button>
+                            ) : (
+                                <button onClick={publishExam} className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg hover:bg-green-700"><CloudUpload size={18}/> Publish</button>
+                            )}
+                            <div className="h-10 w-px bg-slate-200 mx-2"></div>
+                            <button onClick={() => setView("results")} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 flex items-center gap-2"><Database size={18}/> Results</button>
+                            <button onClick={onLogout} className="text-slate-400 hover:text-red-500 p-2"><Trash2 size={20}/></button>
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1 space-y-6">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h2 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><FileText size={18}/> Exam Config</h2>
+                                <input className="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-indigo-500 transition-colors" value={examTitle} onChange={e => setExamTitle(e.target.value)} placeholder="Exam Title" />
+                            </div>
+                            
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h2 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><PlusCircle size={18}/> Add Question</h2>
+                                <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-lg">
+                                    {['multiple_choice', 'identification', 'essay'].map(t => (
+                                        <button key={t} onClick={() => setActiveType(t)} className={`flex-1 py-2 text-xs font-bold uppercase rounded-md transition-all ${activeType === t ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{t.replace('_', ' ').substring(0, 8)}</button>
+                                    ))}
+                                </div>
+                                
+                                <div className="space-y-3">
+                                    <textarea className="w-full p-3 border border-slate-300 rounded-lg h-24 focus:outline-none focus:border-indigo-500 text-sm resize-none" placeholder="Enter question text here..." value={currentQ.text} onChange={e => setCurrentQ({...currentQ, text: e.target.value})}></textarea>
+                                    
+                                    {/* DYNAMIC INPUTS BASED ON TYPE */}
+                                    {activeType === 'multiple_choice' && (
+                                        <div className="space-y-2">
+                                            <p className="text-xs text-slate-400 font-bold uppercase">Options (Select correct one)</p>
+                                            {currentQ.options.map((opt, i) => (
+                                                <div key={i} className="flex items-center gap-2">
+                                                    <input 
+                                                        type="radio" 
+                                                        name="correct_opt" 
+                                                        className="w-4 h-4 text-indigo-600 cursor-pointer"
+                                                        checked={currentQ.correctAnswer === opt && opt !== ""}
+                                                        onChange={() => setCurrentQ({...currentQ, correctAnswer: opt})}
+                                                        disabled={!opt}
+                                                    />
+                                                    <input className="flex-1 p-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder={`Option ${i+1}`} value={opt} onChange={e => setOption(i, e.target.value)}/>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {activeType === 'identification' && (
+                                        <div>
+                                            <label className="text-xs text-slate-400 font-bold uppercase block mb-1">Correct Answer Key</label>
+                                            <input 
+                                                className="w-full p-2 border border-green-300 bg-green-50 rounded text-sm focus:outline-none focus:border-green-500" 
+                                                placeholder="Type the exact correct answer..." 
+                                                value={currentQ.correctAnswer} 
+                                                onChange={e => setCurrentQ({...currentQ, correctAnswer: e.target.value})}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {activeType === 'essay' && (
+                                        <div>
+                                            <label className="text-xs text-slate-400 font-bold uppercase block mb-1">Model Answer (Optional)</label>
+                                            <textarea 
+                                                className="w-full p-2 border border-slate-200 bg-slate-50 rounded text-sm h-16 focus:outline-none" 
+                                                placeholder="Key points to look for..." 
+                                                value={currentQ.correctAnswer} 
+                                                onChange={e => setCurrentQ({...currentQ, correctAnswer: e.target.value})}
+                                            ></textarea>
+                                        </div>
+                                    )}
+
+                                    <button onClick={addQuestion} className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 flex items-center justify-center gap-2 transition-colors mt-2">Add to Exam</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-2">
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]">
+                                <h3 className="font-bold border-b pb-2 mb-4 text-slate-500">Live Preview</h3>
+                                {questions.map((q, i) => (
+                                    <div key={q.id} className="p-4 border rounded-lg mb-3 relative group">
+                                        <button onClick={() => setQuestions(questions.filter(x => x.id !== q.id))} className="absolute top-2 right-2 text-red-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                        <p className="font-bold mb-2 text-slate-800">{i+1}. {q.text}</p>
+                                        
+                                        {/* PREVIEW RENDERING */}
+                                        {q.type === 'multiple_choice' && (
+                                            <div className="space-y-1 pl-4 border-l-2 border-slate-100">
+                                                {q.options.map((o, idx) => (
+                                                    <div key={idx} className={`text-sm px-2 py-1 rounded flex items-center gap-2 ${q.correctAnswer === o ? 'bg-green-100 text-green-800 font-bold' : 'text-slate-500'}`}>
+                                                        {q.correctAnswer === o && <Check size={14}/>}
+                                                        {String.fromCharCode(65+idx)}. {o}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {q.type === 'identification' && (
+                                            <div className="mt-2 text-xs bg-green-50 text-green-700 px-3 py-1 rounded w-fit border border-green-100">
+                                                <strong>Key:</strong> {q.correctAnswer}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {questions.length === 0 && <p className="text-slate-400 text-center mt-20">Start adding questions on the left.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- APP CONTROLLER ---
         const App = () => {
             const [page, setPage] = useState('landing');
             const [user, setUser] = useState(null);
@@ -424,7 +483,7 @@ ${scriptEnd}</body></html>`;
                 }).catch(e => alert(e.message));
             };
 
-            if (page === 'landing') return <Landing onSelect={role => {
+            if (page === 'landing') return <LandingPage onSelectRole={role => {
                 if (role === 'teacher') handleTeacherLogin();
                 else setPage('student');
             }} />;
@@ -433,7 +492,7 @@ ${scriptEnd}</body></html>`;
 
             if (page === 'teacher' && user) return <TeacherDashboard user={user} onLogout={() => { auth.signOut(); setPage('landing'); }} />;
 
-            return <div>Loading...</div>;
+            return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading...</div>;
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
