@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusExam Teacher Dashboard</title>
+    
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 4. Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS ---
+        const Icon = ({ size = 24, color = "currentColor", children, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>
+        );
+        const ShieldAlert = (props) => <Icon {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="M12 8v4" /><path d="M12 16h.01" /></Icon>;
+        const List = (props) => <Icon {...props}><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></Icon>;
+        const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></Icon>;
+        const Hash = (props) => <Icon {...props}><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></Icon>;
+        const Type = (props) => <Icon {...props}><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" x2="15" y1="20" y2="20" /><line x1="12" x2="12" y1="4" y2="20" /></Icon>;
+        const PlusCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></Icon>;
+        const Trash2 = (props) => <Icon {...props}><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></Icon>;
+        const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3" /></Icon>;
+        const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></Icon>;
+        const AlertCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
+        const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></Icon>;
+        const LogIn = (props) => <Icon {...props}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></Icon>;
+        const Database = (props) => <Icon {...props}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></Icon>;
+        const X = (props) => <Icon {...props}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>;
+        const Code = (props) => <Icon {...props}><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></Icon>;
+        const User = (props) => <Icon {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Icon>;
+
+        // --- FIREBASE CONFIGURATION ---
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCrpCFcwF9TtVMOzi2zNJYv-IVYKENC_i4",
+            authDomain: "gnhs-online-exam-solution.firebaseapp.com",
+            databaseURL: "https://gnhs-online-exam-solution-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "gnhs-online-exam-solution",
+            storageBucket: "gnhs-online-exam-solution.firebasestorage.app",
+            messagingSenderId: "582595227570",
+            appId: "1:582595227570:web:b912bc8c007248a085feab",
+            measurementId: "G-RSTERRCZ19"
+        };
+
+        // --- AUTHORIZED ADMIN EMAILS ---
+        const AUTHORIZED_TEACHERS = [
+            "alvin.alfonso1262@gmail.com",
+            "alvin.alfonso2222@gmail.com",
+            "alvina.rhss@gmail.com"
+        ];
+
+        // Initialize for Teacher Dashboard
+        if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // --- HELPER: GENERATE STUDENT EXAM HTML ---
+        const downloadHtmlFile = (examTitle, questions) => {
+            const embeddedData = JSON.stringify(questions);
+            const embeddedConfig = JSON.stringify(FIREBASE_CONFIG);
+            
+            const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${examTitle}</title>
+    <script src="https://cdn.tailwindcss.com"></` + `script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></` + `script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></` + `script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></` + `script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></` + `script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></` + `script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Inline Icons
+        const Icon = ({ size = 24, color = "currentColor", children, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>
+        );
+        const ShieldAlert = (props) => <Icon {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="M12 8v4" /><path d="M12 16h.01" /></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
+        const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></Icon>;
+        const User = (props) => <Icon {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Icon>;
+        const CloudUpload = (props) => <Icon {...props}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M12 12v9" /><path d="m16 16-4-4-4 4" /></Icon>;
+
+        const firebaseConfig = ${embeddedConfig};
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const EXAM_DATA = { title: "${examTitle}", questions: ${embeddedData} };
+
+        const StudentExam = () => {
+            const [studentName, setStudentName] = useState("");
+            const [answers, setAnswers] = useState({});
+            const [cheatCount, setCheatCount] = useState(0);
+            const [cheatLog, setCheatLog] = useState([]);
+            const [status, setStatus] = useState("active");
+
+            useEffect(() => {
+                const handleVisibilityChange = () => {
+                    if (document.hidden && status === "active") {
+                        const time = new Date().toLocaleTimeString();
+                        setCheatCount(prev => prev + 1);
+                        setCheatLog(prev => [...prev, time]);
+                        alert("WARNING: Focusing out of the exam is recorded.");
+                    }
+                };
+                document.addEventListener("visibilitychange", handleVisibilityChange);
+                return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+            }, [status]);
+
+            const handleSubmit = () => {
+                if (!studentName) return alert("Please enter your name.");
+                if (!confirm("Submit exam?")) return;
+                
+                setStatus("submitting");
+                const submission = {
+                    studentName,
+                    answers,
+                    cheatStats: { count: cheatCount, log: cheatLog },
+                    submittedAt: new Date().toISOString()
+                };
+                
+                db.ref('submissions').push(submission)
+                    .then(() => setStatus("submitted"))
+                    .catch(e => { alert("Error: " + e.message); setStatus("active"); });
+            };
+
+            if (status === "submitted") return (
+                <div className="p-10 text-center flex flex-col items-center justify-center min-h-screen">
+                    <div className="bg-green-100 p-6 rounded-full text-green-600 mb-6"><CheckCircle size={64}/></div>
+                    <h1 className="text-3xl font-bold mb-2">Exam Submitted</h1>
+                    <p className="text-slate-500">Thank you, {studentName}. Your exam is securely uploaded.</p>
+                </div>
+            );
+
+            return (
+                <div className="max-w-2xl mx-auto p-6 font-sans">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+                        <h1 className="text-2xl font-bold text-slate-800 mb-1">{EXAM_DATA.title}</h1>
+                        <p className="text-slate-500 text-sm">Student Exam • Do not leave this tab</p>
+                    </div>
+
+                    <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border-l-4 border-indigo-500">
+                        <label className="block text-sm font-bold mb-2 text-slate-700 flex items-center gap-2">
+                            <User size={16}/> Student Name
+                        </label>
+                        <input type="text" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" 
+                            value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="Enter your full name" />
+                    </div>
+
+                    {EXAM_DATA.questions.map((q, i) => (
+                        <div key={q.id} className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <p className="font-bold mb-4 text-slate-800 text-lg">{i+1}. {q.text}</p>
+                            {q.type === 'multiple_choice' ? (
+                                <div className="space-y-2">
+                                    {q.options.map((opt, idx) => (
+                                        <label key={idx} className="flex items-center gap-3 cursor-pointer p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                                            <input type="radio" name={'q'+q.id} className="w-4 h-4 text-indigo-600" onChange={() => setAnswers({...answers, [q.id]: opt})} />
+                                            <span className="text-slate-700">{opt}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            ) : (
+                                <textarea className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" rows="4" 
+                                    placeholder="Type your answer here..."
+                                    onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}></textarea>
+                            )}
+                        </div>
+                    ))}
+                    <button onClick={handleSubmit} disabled={status === 'submitting'} 
+                        className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                        {status === 'submitting' ? "Uploading..." : <><CloudUpload size={20}/> Submit Exam</>}
+                    </button>
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<StudentExam />);
+    </` + `script>
+</body>
+</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${examTitle.replace(/\s+/g, '_')}_Exam.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        // --- COMPONENTS ---
+
+        const ResultsDashboard = ({ onClose }) => {
+            const [submissions, setSubmissions] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+
+            useEffect(() => {
+                const subRef = db.ref('submissions');
+                subRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const subList = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                        // Sort by date desc
+                        subList.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+                        setSubmissions(subList);
+                    } else {
+                        setSubmissions([]);
+                    }
+                    setLoading(false);
+                }, (err) => {
+                    console.error(err);
+                    setError("Access Denied. You are not listed as an admin.");
+                    setLoading(false);
+                });
+                return () => subRef.off();
+            }, []);
+
+            return (
+                <div className="max-w-5xl mx-auto p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><Database/> Student Results</h2>
+                        <button onClick={onClose} className="text-slate-500 hover:text-slate-800">Close</button>
+                    </div>
+
+                    {loading && <p className="text-slate-500 animate-pulse">Syncing with database...</p>}
+                    
+                    {error && (
+                        <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-2 border border-red-200">
+                            <AlertTriangle size={20}/> {error}
+                        </div>
+                    )}
+
+                    {!loading && !error && (
+                        <div className="bg-white rounded-xl shadow overflow-hidden border border-slate-200">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th className="p-4 font-semibold text-slate-600">Student Name</th>
+                                        <th className="p-4 font-semibold text-slate-600">Exam</th>
+                                        <th className="p-4 font-semibold text-slate-600">Submitted At</th>
+                                        <th className="p-4 font-semibold text-slate-600">Integrity</th>
+                                        <th className="p-4 font-semibold text-slate-600">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {submissions.map(sub => (
+                                        <tr key={sub.id} className="hover:bg-slate-50">
+                                            <td className="p-4 font-medium text-slate-800">{sub.studentName}</td>
+                                            <td className="p-4 text-slate-600">{sub.examTitle}</td>
+                                            <td className="p-4 text-sm text-slate-500">{new Date(sub.submittedAt).toLocaleString()}</td>
+                                            <td className="p-4">
+                                                <span className={`px-2 py-1 rounded text-xs font-bold flex w-fit items-center gap-1 ${sub.cheatStats?.count > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                                    {sub.cheatStats?.count > 0 ? <AlertTriangle size={12}/> : <CheckCircle size={12}/>}
+                                                    {sub.cheatStats?.count || 0} Flags
+                                                </span>
+                                            </td>
+                                            <td className="p-4">
+                                                <button onClick={() => alert(JSON.stringify(sub.answers, null, 2))} className="text-indigo-600 hover:underline text-sm font-medium">View Answers</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {submissions.length === 0 && (
+                                        <tr><td colSpan="5" className="p-12 text-center text-slate-400">No submissions found in the database yet.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const TeacherDashboard = ({ onLaunchExam }) => {
+            const [questions, setQuestions] = useState([]);
+            const [examTitle, setExamTitle] = useState("Midterm Examination");
+            const [activeType, setActiveType] = useState("multiple_choice");
+            const [user, setUser] = useState(null);
+            const [view, setView] = useState("builder");
+            const [currentQ, setCurrentQ] = useState({ text: "", options: ["","","",""] });
+
+            useEffect(() => {
+                auth.onAuthStateChanged((u) => setUser(u));
+            }, []);
+
+            const handleLogin = () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch(e => alert(e.message));
+            };
+
+            const addQuestion = () => {
+                if(!currentQ.text) return;
+                setQuestions([...questions, { ...currentQ, id: Date.now(), type: activeType }]);
+                setCurrentQ({ text: "", options: ["","","",""] });
+            };
+
+            if (view === "results") return <ResultsDashboard onClose={() => setView("builder")} />;
+
+            return (
+                <div className="max-w-5xl mx-auto p-6 animate-fade-in text-slate-800">
+                    <header className="mb-8 flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div>
+                            <h1 className="text-2xl font-bold flex items-center gap-2">
+                                <ShieldAlert className="text-indigo-600" /> FocusExam
+                            </h1>
+                            <p className="text-slate-500 text-sm">Secure Exam Builder</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {user ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="text-right hidden md:block">
+                                        <p className="text-xs text-slate-400">Logged in as</p>
+                                        <p className="text-sm font-bold text-slate-700">{user.email}</p>
+                                    </div>
+                                    
+                                    {AUTHORIZED_TEACHERS.includes(user.email) && (
+                                        <button onClick={() => setView("results")} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 flex items-center gap-2 border border-indigo-200">
+                                            <Database size={16}/> Results
+                                        </button>
+                                    )}
+                                    
+                                    <button onClick={() => auth.signOut()} className="text-slate-400 hover:text-red-500 p-2"><LogOut size={18}/></button>
+                                </div>
+                            ) : (
+                                <button onClick={handleLogin} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-900 flex items-center gap-2">
+                                    <LogIn size={16}/> Teacher Login
+                                </button>
+                            )}
+                            <button onClick={() => downloadHtmlFile(examTitle, questions)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2 shadow-lg shadow-indigo-200">
+                                <Download size={16}/> Download Exam
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1 space-y-6">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h2 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><FileText size={18}/> Exam Details</h2>
+                                <input className="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-indigo-500 transition-colors" value={examTitle} onChange={e => setExamTitle(e.target.value)} placeholder="Exam Title" />
+                            </div>
+                            
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h2 className="font-bold text-lg mb-4 text-slate-700 flex items-center gap-2"><PlusCircle size={18}/> Add Question</h2>
+                                <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-lg">
+                                    {['multiple_choice', 'essay'].map(t => (
+                                        <button key={t} onClick={() => setActiveType(t)} className={`flex-1 py-2 text-xs font-bold uppercase rounded-md transition-all ${activeType === t ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{t.replace('_', ' ')}</button>
+                                    ))}
+                                </div>
+                                <div className="space-y-3">
+                                    <textarea className="w-full p-3 border border-slate-300 rounded-lg h-24 focus:outline-none focus:border-indigo-500 text-sm resize-none" placeholder="Enter question text here..." value={currentQ.text} onChange={e => setCurrentQ({...currentQ, text: e.target.value})}></textarea>
+                                    {activeType === 'multiple_choice' && (
+                                        <div className="space-y-2">
+                                            {currentQ.options.map((opt, i) => (
+                                                <div key={i} className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold text-slate-400 w-4">{String.fromCharCode(65+i)}</span>
+                                                    <input className="flex-1 p-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder={`Option ${i+1}`} value={opt} onChange={e => {
+                                                        const newOpts = [...currentQ.options]; newOpts[i] = e.target.value; setCurrentQ({...currentQ, options: newOpts});
+                                                    }}/>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <button onClick={addQuestion} className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 flex items-center justify-center gap-2 transition-colors mt-2">Add to Exam</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-2">
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px] flex flex-col">
+                                <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                                    <h3 className="font-bold text-slate-700">Exam Preview</h3>
+                                    <span className="text-xs font-medium bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">{questions.length} Questions</span>
+                                </div>
+                                <div className="p-6 flex-1 overflow-y-auto max-h-[600px] space-y-4">
+                                    {questions.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                                            <FileText size={48} className="mb-2 opacity-20"/>
+                                            <p>No questions added yet.</p>
+                                        </div>
+                                    ) : (
+                                        questions.map((q, i) => (
+                                            <div key={q.id} className="p-5 border border-slate-200 rounded-xl hover:border-indigo-200 transition-colors relative group bg-white shadow-sm">
+                                                <button onClick={() => setQuestions(questions.filter(x => x.id !== q.id))} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                                                <div className="flex gap-4">
+                                                    <span className="flex-shrink-0 w-8 h-8 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold text-sm border border-slate-200">{i+1}</span>
+                                                    <div className="flex-1 pr-8">
+                                                        <p className="font-medium text-slate-800 mb-3">{q.text}</p>
+                                                        {q.type === 'multiple_choice' && (
+                                                            <div className="grid grid-cols-1 gap-2">
+                                                                {q.options.map((o, idx) => (
+                                                                    <div key={idx} className="text-sm text-slate-600 bg-slate-50 border border-slate-100 px-3 py-2 rounded-lg flex gap-2">
+                                                                        <span className="font-bold text-slate-400">{String.fromCharCode(65+idx)}.</span> {o}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {q.type === 'essay' && (
+                                                            <div className="h-20 bg-slate-50 border border-slate-200 border-dashed rounded-lg w-full"></div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return <TeacherDashboard />;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
