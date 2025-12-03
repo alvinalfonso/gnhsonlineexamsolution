@@ -592,7 +592,7 @@
             const [subs, setSubs] = useState([]);
             const [examData, setExamData] = useState(null);
             const [loading, setLoading] = useState(true);
-            const [gradingSub, setGradingSub] = useState(null); // Sub currently being graded
+            const [gradingSubId, setGradingSubId] = useState(null); // CHANGED: Store ID to keep data in sync
 
             useEffect(() => {
                 db.ref(`exams/${examId}`).once('value').then(s => setExamData(s.val()));
@@ -760,6 +760,9 @@
                 );
             };
 
+            // Derive the active submission from the live list to ensure updates show immediately
+            const activeGradingSub = subs.find(s => s.id === gradingSubId);
+
             return (
                 <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
@@ -779,7 +782,7 @@
                                                 <td className="p-4 text-slate-500"><div className="flex items-center gap-2"><Icons.Clock size={14}/> {new Date(s.submittedAt).toLocaleString()}</div></td>
                                                 <td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${s.cheatStats?.count>0?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{s.cheatStats?.count||0} Flags</span></td>
                                                 <td className="p-4">
-                                                    <button onClick={()=>setGradingSub(s)} className="text-white bg-brand-600 px-3 py-2 rounded-lg font-bold text-xs hover:bg-brand-700 shadow flex items-center gap-2">
+                                                    <button onClick={()=>setGradingSubId(s.id)} className="text-white bg-brand-600 px-3 py-2 rounded-lg font-bold text-xs hover:bg-brand-700 shadow flex items-center gap-2">
                                                         <Icons.Edit size={12}/> Grade / Review
                                                     </button>
                                                 </td>
@@ -791,7 +794,7 @@
                             )}
                         </div>
                     </div>
-                    {gradingSub && <GradingModal submission={gradingSub} onClose={() => setGradingSub(null)} />}
+                    {activeGradingSub && <GradingModal submission={activeGradingSub} onClose={() => setGradingSubId(null)} />}
                 </div>
             );
         };
