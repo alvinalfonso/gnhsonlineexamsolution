@@ -71,9 +71,7 @@
             Home: (p) => <Icon {...p}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></Icon>,
             AlertTriangle: (p) => <Icon {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></Icon>,
             Lock: (p) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></Icon>,
-            ToggleLeft: (p) => <Icon {...p}><rect x="1" y="5" width="22" height="14" rx="7" ry="7"/><circle cx="8" cy="12" r="3"/></Icon>,
-            ToggleRight: (p) => <Icon {...p}><rect x="1" y="5" width="22" height="14" rx="7" ry="7"/><circle cx="16" cy="12" r="3"/></Icon>,
-            Calendar: (p) => <Icon {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></Icon>
+            Clock: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>
         };
 
         // --- CONFIG ---
@@ -342,9 +340,7 @@
 
             const addQuestion = () => {
                 if(!curQ.text) return;
-                // Removed requirement for correctAnswer in Essay and optional logic for Identification
                 if ((qType === 'multiple_choice' || qType === 'true_false') && !curQ.correctAnswer) return alert("Set correct answer.");
-                
                 const newQ = { ...curQ, id: editingQId || Date.now(), type: qType };
                 if (editingQId) {
                     setNewExam(p => ({ ...p, questions: p.questions.map(q => q.id === editingQId ? newQ : q) }));
@@ -390,7 +386,7 @@
                                                     <p className="font-medium text-slate-800 mb-2 text-sm">{q.text}</p>
                                                     {q.type === 'multiple_choice' && <div className="space-y-1 border-l-2 pl-2">{q.options.map((o, idx) => <div key={idx} className={`text-xs ${q.correctAnswer === o ? 'text-green-600 font-bold' : 'text-slate-400'}`}>{String.fromCharCode(65+idx)}. {o}</div>)}</div>}
                                                     {q.type === 'true_false' && <div className="text-xs font-bold text-green-600">Answer: {q.correctAnswer}</div>}
-                                                    {q.type === 'identification' && <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded w-fit">KEY: {q.correctAnswer}</div>}
+                                                    {q.type === 'identification' && q.correctAnswer && <div className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded w-fit">KEY: {q.correctAnswer}</div>}
                                                 </div>
                                             </div>
                                         </div>
@@ -501,8 +497,6 @@
                                                 </div>
                                             )}
 
-                                            {/* Essay has no pre-answer input, just the question text above */}
-
                                             <div className="flex gap-3 pt-2">
                                                 {editingQId && <button onClick={() => {setEditingQId(null); setCurQ({ text: "", options: ["","","",""], correctAnswer: "" });}} className="px-6 py-2 rounded-lg font-bold text-slate-500">Cancel</button>}
                                                 <button onClick={addQuestion} className={`flex-1 py-3 rounded-xl font-bold text-white shadow-md ${editingQId ? 'bg-amber-500' : 'bg-slate-800'}`}>{editingQId ? 'Update Question' : 'Add Question'}</button>
@@ -543,13 +537,10 @@
             const calculateScore = (submission) => {
                 if (!examData || !examData.questions) return "N/A";
                 let score = 0;
-                let max = 0; // Only count questions that have a defined correct answer
+                let max = 0; 
                 
                 examData.questions.forEach(q => {
-                    // Skip essay in auto-grading count
                     if(q.type === 'essay') return;
-
-                    // For identification, skip if no answer key was provided
                     if(q.type === 'identification' && !q.correctAnswer) return;
                     
                     max++;
@@ -559,11 +550,10 @@
                     if (q.type === 'multiple_choice' || q.type === 'true_false') {
                         if (studentAns === q.correctAnswer) score++;
                     } else if (q.type === 'identification') {
-                        // Case-insensitive check
                         if (q.correctAnswer && studentAns.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) score++;
                     }
                 });
-                return max > 0 ? `${score}/${max}` : "Needs Manual Review";
+                return max > 0 ? `${score}/${max}` : "Manual";
             };
 
             return (
@@ -576,15 +566,15 @@
                         <div className="flex-1 overflow-auto p-6">
                             {loading ? <div>Loading...</div> : (
                                 <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50 text-slate-500 font-semibold"><tr><th className="p-4">Student</th><th className="p-4">Score (Auto)</th><th className="p-4">Submitted</th><th className="p-4">Integrity</th><th className="p-4">Actions</th></tr></thead>
+                                    <thead className="bg-slate-50 text-slate-500 font-semibold"><tr><th className="p-4">Student</th><th className="p-4">Score</th><th className="p-4">Submitted</th><th className="p-4">Integrity</th><th className="p-4">Actions</th></tr></thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {subs.map((s, i) => (
                                             <tr key={i} className="hover:bg-slate-50">
                                                 <td className="p-4 font-bold">{s.studentName}</td>
                                                 <td className="p-4 font-bold text-brand-600">{calculateScore(s)}</td>
-                                                <td className="p-4">{new Date(s.submittedAt).toLocaleString()}</td>
+                                                <td className="p-4 text-slate-500"><div className="flex items-center gap-2"><Icons.Clock size={14}/> {new Date(s.submittedAt).toLocaleString()}</div></td>
                                                 <td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${s.cheatStats?.count>0?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{s.cheatStats?.count||0} Flags</span></td>
-                                                <td className="p-4"><button onClick={()=>alert(JSON.stringify(s.answers, null, 2))} className="text-brand-600 font-bold">View Answers</button></td>
+                                                <td className="p-4"><button onClick={()=>alert(JSON.stringify(s.answers, null, 2))} className="text-brand-600 font-bold hover:underline">View Answers</button></td>
                                             </tr>
                                         ))}
                                         {subs.length === 0 && <tr><td colSpan="5" className="p-12 text-center text-slate-400">No submissions.</td></tr>}
@@ -602,19 +592,19 @@
             const [exams, setExams] = useState([]);
             const [filteredExams, setFilteredExams] = useState([]);
             const [year, setYear] = useState("");
-            const [subject, setSubject] = useState("");
-            const [teacherFilter, setTeacherFilter] = useState("");
+            const [myTeachers, setMyTeachers] = useState([]);
+            const [allTeachers, setAllTeachers] = useState([]);
             const [activeExam, setActiveExam] = useState(null);
             const [studentName, setStudentName] = useState("");
-            const [status, setStatus] = useState("lobby"); 
+            const [status, setStatus] = useState("onboarding"); 
             const [answers, setAnswers] = useState({});
             const [cheatCount, setCheatCount] = useState(0);
             const [agreed, setAgreed] = useState(false);
-            const [loginUser, setLoginUser] = useState(null); // Track logged-in student
-            const [completedExamIds, setCompletedExamIds] = useState(new Set()); // Track taken exams
-            const [profileData, setProfileData] = useState(null); // New State for Profile
+            const [loginUser, setLoginUser] = useState(null);
+            const [completedExamIds, setCompletedExamIds] = useState(new Set());
+            const [profileData, setProfileData] = useState(null);
 
-            // Student Google Login
+            // Login
             const handleStudentLogin = () => {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 auth.signInWithPopup(provider).then(res => {
@@ -623,22 +613,23 @@
                 }).catch(e => alert("Login failed: " + e.message));
             };
 
-            // 1. Load Student Profile on Login
+            // Load Profile
             useEffect(() => {
                 if (!loginUser) return;
                 db.ref('students/' + loginUser.uid).once('value').then(s => {
                     const data = s.val();
                     if (data) {
                         setProfileData(data);
-                        setYear(data.yearLevel); // Auto-set filter
+                        setYear(data.yearLevel);
+                        setStatus('lobby');
                     } else {
-                        // No profile yet, user stays on onboarding
-                        setProfileData(null);
+                        // First time setup
+                        setStatus('onboarding');
                     }
                 });
             }, [loginUser]);
 
-            // 2. Check Completed Exams
+            // Check Completed
             useEffect(() => {
                 if (!loginUser) return;
                 db.ref('submissions').orderByChild('uid').equalTo(loginUser.uid).once('value').then(snapshot => {
@@ -647,125 +638,46 @@
                 });
             }, [loginUser]);
 
-            // 3. Load Exams
+            // Load Exams & Teachers
             useEffect(() => {
                 db.ref('exams').orderByChild('status').equalTo('published').on('value', s => {
                     const data = s.val();
                     if(data) {
-                         // Extract all unique teacher names for the onboarding
-                         setExams(Object.entries(data).map(([k,v]) => ({id:k, ...v})));
+                         const list = Object.entries(data).map(([k,v]) => ({id:k, ...v}));
+                         setExams(list);
+                         setAllTeachers([...new Set(list.map(e => e.teacherName).filter(Boolean))]);
                     }
                 });
             }, []);
 
-            // 4. New Teacher Detection
+            // New Teacher Detection
             useEffect(() => {
                 if (!profileData || !exams.length) return;
-                
-                // Filter exams that match the student's year level
                 const relevantExams = exams.filter(e => e.yearLevel === profileData.yearLevel);
-                
-                // Extract teachers from these relevant exams
                 const relevantTeachers = [...new Set(relevantExams.map(e => e.teacherName).filter(Boolean))];
-                
-                const myTeachers = profileData.myTeachers || [];
-                
-                // Find teachers who are relevant but not yet in my list
-                const newFound = relevantTeachers.filter(t => !myTeachers.includes(t));
+                const currentMyTeachers = profileData.myTeachers || [];
+                const newFound = relevantTeachers.filter(t => !currentMyTeachers.includes(t));
                 
                 if (newFound.length > 0) {
-                    const teacherName = newFound[0]; 
-                    const message = `${teacherName} has posted an exam for ${profileData.yearLevel}. Do you want to add them to your teacher list since you are ${profileData.yearLevel}?`;
-                    
-                    if (confirm(message)) {
-                        const updated = [...myTeachers, ...newFound];
+                    if (confirm(`New teacher(s) found for ${profileData.yearLevel}: ${newFound.join(", ")}. Add to your list?`)) {
+                        const updated = [...currentMyTeachers, ...newFound];
                         db.ref('students/' + loginUser.uid + '/myTeachers').set(updated);
                         setProfileData({...profileData, myTeachers: updated});
                     }
                 }
-            }, [profileData, exams, loginUser]);
+            }, [profileData, exams]);
 
-
-            // 5. Filtering Logic (Strict)
+            // Filter Logic
             useEffect(() => {
-                if (!profileData || !subject) { setFilteredExams([]); return; }
-                
+                if (!profileData) { setFilteredExams([]); return; }
                 const matches = exams.filter(e => 
-                    e.yearLevel === profileData.yearLevel && // Strict Year check
-                    e.subject.toLowerCase().includes(subject.toLowerCase()) &&
-                    profileData.myTeachers.includes(e.teacherName) // Strict Teacher check
+                    e.yearLevel === profileData.yearLevel &&
+                    (profileData.myTeachers || []).includes(e.teacherName)
                 );
                 setFilteredExams(matches);
-            }, [subject, exams, profileData]);
+            }, [exams, profileData]);
 
-
-            const handleProfileSave = (selectedYear, selectedTeachers) => {
-                if (!selectedYear || selectedTeachers.length === 0) return alert("Select Year and at least one Teacher.");
-                const newData = { yearLevel: selectedYear, myTeachers: selectedTeachers };
-                db.ref('students/' + loginUser.uid).set(newData).then(() => {
-                    setProfileData(newData);
-                    setYear(selectedYear);
-                });
-            };
-            
-            // --- RENDER LOGIC ---
-
-            if (!loginUser) return (
-                <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100">
-                    <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full">
-                        <button onClick={onBack} className="absolute top-6 left-6 text-slate-400"><Icons.X/></button>
-                        <h2 className="text-2xl font-bold mb-4 text-slate-800">Student Login</h2>
-                        <button onClick={handleStudentLogin} className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900">Sign in with Google</button>
-                    </div>
-                </div>
-            );
-
-            // ONBOARDING SCREEN (First Time)
-            if (!profileData) {
-                const allTeachers = [...new Set(exams.map(e => e.teacherName).filter(Boolean))];
-                
-                // Local state for onboarding form
-                const Onboarding = () => {
-                    const [selY, setSelY] = useState("");
-                    const [selTs, setSelTs] = useState([]);
-                    return (
-                        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100">
-                            <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
-                                <h2 className="text-xl font-bold text-slate-800 mb-2">Setup Profile</h2>
-                                <p className="text-slate-500 text-sm mb-6">Choose your year level and teachers. You can only take exams for this year level.</p>
-                                
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Year Level (Permanent)</label>
-                                <select className="w-full p-3 border rounded-lg mb-6" value={selY} onChange={e=>setSelY(e.target.value)}>
-                                    <option value="">Select Year...</option>
-                                    {ALLOWED_YEARS.map(y => <option key={y} value={`Grade ${y}`}>Grade {y}</option>)}
-                                </select>
-
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Select Your Teachers</label>
-                                <div className="space-y-2 mb-6 max-h-40 overflow-y-auto border p-2 rounded-lg">
-                                    {allTeachers.length === 0 ? <p className="text-xs text-slate-400">No teachers found yet.</p> :
-                                    allTeachers.map(t => (
-                                        <label key={t} className="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" checked={selTs.includes(t)} onChange={e => {
-                                                if(e.target.checked) setSelTs([...selTs, t]);
-                                                else setSelTs(selTs.filter(x => x !== t));
-                                            }}/>
-                                            <span className="text-sm">{t}</span>
-                                        </label>
-                                    ))}
-                                </div>
-
-                                <button onClick={() => handleProfileSave(selY, selTs)} className="w-full bg-brand-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
-                            </div>
-                        </div>
-                    );
-                };
-                return <Onboarding />;
-            }
-
-            // MAIN STUDENT LOBBY
-            const subjects = [...new Set(exams.map(e => e.subject))];
-            
-            // Cheating Watcher
+            // Cheat Watcher
             useEffect(() => {
                 if (status !== 'taking') return;
                 const h = () => { if (document.hidden) setCheatCount(c => c + 1); };
@@ -773,8 +685,15 @@
                 return () => document.removeEventListener("visibilitychange", h);
             }, [status]);
 
-            const startExam = (exam) => { setActiveExam(exam); setStatus('ready'); };
-            
+            const handleProfileSave = (selectedYear, selectedTeachers) => {
+                if (!selectedYear || selectedTeachers.length === 0) return alert("Select Year and Teachers.");
+                const newData = { yearLevel: selectedYear, myTeachers: selectedTeachers };
+                db.ref('students/' + loginUser.uid).set(newData).then(() => {
+                    setProfileData(newData);
+                    setStatus('lobby');
+                });
+            };
+
             const submitFinal = () => {
                 if(!confirm("Submit?")) return;
                 db.ref('submissions').push({
@@ -792,7 +711,57 @@
                 });
             };
 
-            // ... (Same Render logic for List, Ready, Taking views, but simplified for brevity here)
+            // VIEWS
+            if (!loginUser) return (
+                <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full">
+                        <button onClick={onBack} className="absolute top-6 left-6 text-slate-400"><Icons.X/></button>
+                        <h2 className="text-2xl font-bold mb-4 text-slate-800">Student Login</h2>
+                        <button onClick={handleStudentLogin} className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900">Sign in with Google</button>
+                    </div>
+                </div>
+            );
+
+            if (status === 'onboarding') {
+                // Local state for onboarding form
+                const [selY, setSelY] = useState("");
+                const [selTs, setSelTs] = useState([]);
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
+                            <h2 className="text-xl font-bold text-slate-800 mb-2">Setup Profile</h2>
+                            <p className="text-slate-500 text-sm mb-6">Select your details.</p>
+                            
+                            <div className="mb-6">
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">1. Select Year Level</label>
+                                <select className="w-full p-3 border rounded-lg" value={selY} onChange={e=>setSelY(e.target.value)}>
+                                    <option value="">Select Year...</option>
+                                    {ALLOWED_YEARS.map(y => <option key={y} value={`Grade ${y}`}>Grade {y}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">2. Select Teachers</label>
+                                <div className="space-y-2 max-h-40 overflow-y-auto border p-2 rounded-lg">
+                                    {allTeachers.length === 0 ? <p className="text-xs text-slate-400">No teachers found.</p> :
+                                    allTeachers.map(t => (
+                                        <label key={t} className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={selTs.includes(t)} onChange={e => {
+                                                if(e.target.checked) setSelTs([...selTs, t]);
+                                                else setSelTs(selTs.filter(x => x !== t));
+                                            }}/>
+                                            <span className="text-sm">{t}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button onClick={() => handleProfileSave(selY, selTs)} className="w-full bg-brand-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
+                        </div>
+                    </div>
+                );
+            }
+
             if (status === 'lobby') return (
                  <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-500 to-purple-600">
                         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 relative overflow-hidden">
@@ -805,44 +774,27 @@
                                 </div>
                             </div>
                             
-                            <div className="text-center mb-8">
-                                <h2 className="text-2xl font-bold text-slate-800">Student Portal</h2>
-                            </div>
+                            <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Available Exams</h2>
                             
-                            {/* Filters */}
-                            <div className="space-y-4 mb-6">
-                                <label className="text-xs font-bold text-slate-400 uppercase block ml-1">Filter by Subject</label>
-                                <select className="w-full p-4 bg-slate-50 rounded-xl font-medium" value={subject} onChange={e => setSubject(e.target.value)}>
-                                    <option value="">Select Subject...</option>
-                                    {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
+                            <div className="space-y-3 animate-fade-in max-h-[400px] overflow-y-auto pr-1">
+                                {filteredExams.length === 0 ? <p className="text-slate-400 text-center py-4 bg-slate-50 rounded">No exams found for your profile.</p> : 
+                                filteredExams.map(ex => {
+                                    const isCompleted = completedExamIds.has(ex.id);
+                                    return (
+                                    <button 
+                                        key={ex.id} 
+                                        onClick={() => { if(!isCompleted){ setActiveExam(ex); setStatus('ready'); }}} 
+                                        disabled={isCompleted}
+                                        className={`w-full p-4 border rounded-xl text-left flex justify-between items-center group transition-all ${isCompleted ? 'bg-green-50 border-green-200 cursor-not-allowed' : 'bg-brand-50 hover:bg-brand-100 border-brand-100'}`}
+                                    >
+                                        <div>
+                                            <h3 className="font-bold text-brand-900">{ex.title}</h3>
+                                            <p className="text-xs text-brand-600 font-medium">{ex.subject} • {ex.teacherName}</p>
+                                        </div>
+                                        {isCompleted ? <span className="text-xs font-bold text-green-600 bg-white px-2 py-1 rounded border border-green-200">Done</span> : <Icons.Play size={16} className="text-brand-500"/>}
+                                    </button>
+                                )})}
                             </div>
-
-                            {subject && (
-                                <div className="space-y-3 animate-fade-in">
-                                    {filteredExams.length === 0 ? <p className="text-slate-400 text-center py-4 bg-slate-50 rounded">No active exams for your year/teachers.</p> : 
-                                    filteredExams.map(ex => {
-                                        const isCompleted = completedExamIds.has(ex.id);
-                                        return (
-                                        <button 
-                                            key={ex.id} 
-                                            onClick={() => !isCompleted && startExam(ex)} 
-                                            disabled={isCompleted}
-                                            className={`w-full p-4 border rounded-xl text-left flex justify-between items-center group transition-all ${isCompleted ? 'bg-green-50 border-green-200 cursor-not-allowed' : 'bg-brand-50 hover:bg-brand-100 border-brand-100'}`}
-                                        >
-                                            <div>
-                                                <h3 className="font-bold text-brand-900">{ex.title}</h3>
-                                                <p className="text-xs text-brand-600 font-medium">By: {ex.teacherName}</p>
-                                            </div>
-                                            {isCompleted ? (
-                                                <span className="text-xs font-bold text-green-600 bg-white px-2 py-1 rounded border border-green-200">Completed</span>
-                                            ) : (
-                                                <Icons.Play size={16} className="text-brand-500"/>
-                                            )}
-                                        </button>
-                                    )})}
-                                </div>
-                            )}
                         </div>
                     </div>
             );
@@ -853,23 +805,15 @@
                         <button onClick={() => setStatus('lobby')} className="text-slate-400 text-sm mb-4">Back</button>
                         <h2 className="text-2xl font-bold text-slate-800">{activeExam.title}</h2>
                         <p className="text-slate-500 mb-6">Teacher: {activeExam.teacherName}</p>
-                        
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-amber-800 text-sm">
                              <div className="flex items-center gap-2 font-bold mb-1"><Icons.AlertTriangle size={16}/> ACADEMIC INTEGRITY WARNING</div>
                              <p>Switching tabs is monitored.</p>
                         </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-500 mb-1">Full Name</label>
-                                <input className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="Required" />
-                            </div>
-                            <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                                <input type="checkbox" className="w-5 h-5 accent-green-600" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/>
-                                <span className="text-sm font-medium text-slate-700">I agree to the terms.</span>
-                            </label>
-                            <button onClick={() => { if(studentName && agreed) setStatus('taking'); else alert("Please agree."); }} className={`w-full mt-4 p-4 rounded-xl font-bold text-lg shadow-lg transition-all ${agreed ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Start Exam</button>
-                        </div>
+                        <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" className="w-5 h-5 accent-green-600" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/>
+                            <span className="text-sm font-medium text-slate-700">I agree to the terms.</span>
+                        </label>
+                        <button onClick={() => { if(agreed) setStatus('taking'); else alert("Please agree."); }} className={`w-full mt-4 p-4 rounded-xl font-bold text-lg shadow-lg transition-all ${agreed ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Start Exam</button>
                     </div>
                 </div>
             );
@@ -878,7 +822,7 @@
                 <div className="min-h-screen bg-slate-50 p-4 md:p-8">
                     <div className="max-w-4xl mx-auto">
                         <div className="bg-white p-5 rounded-2xl shadow-sm border mb-8 sticky top-4 z-20 flex justify-between items-center">
-                            <div><h1 className="font-bold text-xl">{activeExam.title}</h1><p className="text-sm text-slate-500">{studentName}</p></div>
+                            <div><h1 className="font-bold text-xl">{activeExam.title}</h1><p className="text-sm text-slate-500">{loginUser.displayName}</p></div>
                             <div className={`px-4 py-2 rounded-xl font-bold text-sm ${cheatCount>0?'bg-red-50 text-red-600':'bg-green-50 text-green-600'}`}>{cheatCount>0?'Flagged':'Secure'}</div>
                         </div>
                         {renderStudentSections()}
