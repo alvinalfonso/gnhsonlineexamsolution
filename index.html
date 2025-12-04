@@ -155,6 +155,7 @@
         const downloadHtmlFile = (exam) => {
             const embeddedData = JSON.stringify(exam.questions);
             const embeddedConfig = JSON.stringify(FIREBASE_CONFIG);
+            const embeddedInstructions = JSON.stringify(exam.instructions || {});
             const scriptEnd = "<\/script>"; 
             
             const htmlContent = `<!DOCTYPE html>
@@ -184,7 +185,7 @@
         if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
         const db=firebase.database();
         
-        const EXAM_DATA={id:"${exam.id || 'downloaded'}",title:"${exam.title}",questions:${embeddedData},teacher:"${exam.teacherName}"};
+        const EXAM_DATA={id:"${exam.id || 'downloaded'}",title:"${exam.title}",questions:${embeddedData},instructions:${embeddedInstructions},teacher:"${exam.teacherName}"};
         const SECTIONS = [
             { type: 'multiple_choice', title: 'I. Multiple Choice' },
             { type: 'true_false', title: 'II. True or False' },
@@ -224,12 +225,15 @@
             let qCounter = 0;
             const renderSections = () => {
                 const safeQs = Array.isArray(EXAM_DATA.questions) ? EXAM_DATA.questions : Object.values(EXAM_DATA.questions || {});
+                const inst = EXAM_DATA.instructions || {};
+                
                 return SECTIONS.map(section => {
                     const qs = safeQs.filter(q => q.type === section.type);
                     if (qs.length === 0) return null;
                     return (
                         <div key={section.type} className="mb-8">
-                            <h3 className="text-xl font-bold mb-4 border-b border-gray-200 pb-2">{section.title}</h3>
+                            <h3 className="text-xl font-bold mb-2 border-b border-gray-200 pb-2">{section.title}</h3>
+                            {inst[section.type] && <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded italic border-l-4 border-[#F5C400]">{inst[section.type]}</div>}
                             <div className="space-y-4">
                                 {qs.map((q) => {
                                     qCounter++;
@@ -362,11 +366,12 @@
             const [exams, setExams] = useState([]);
             const [selectedExamId, setSelectedExamId] = useState(null);
             
-            const [newExam, setNewExam] = useState({ title: "", subject: "", yearLevel: "", questions: [] });
+            const [newExam, setNewExam] = useState({ title: "", subject: "", yearLevel: "", questions: [], instructions: { multiple_choice: '', true_false: '', identification: '', essay: '' } });
             const [qType, setQType] = useState("multiple_choice");
             const [curQ, setCurQ] = useState({ text: "", options: ["","","",""], correctAnswer: "", points: 1 });
             const [editingQId, setEditingQId] = useState(null);
             const [editingExamId, setEditingExamId] = useState(null); 
+            const [showHelp, setShowHelp] = useState(false);
 
             useEffect(() => {
                 db.ref('exams').orderByChild('teacherEmail').equalTo(user.email).on('value', s => {
@@ -398,7 +403,7 @@
             };
 
             const resetCreateForm = () => {
-                setNewExam({ title: "", subject: "", yearLevel: "", questions: [] });
+                setNewExam({ title: "", subject: "", yearLevel: "", questions: [], instructions: { multiple_choice: '', true_false: '', identification: '', essay: '' } });
                 setEditingExamId(null);
                 setEditingQId(null);
                 setCurQ({ text: "", options: ["","","",""], correctAnswer: "", points: 1 });
@@ -413,7 +418,7 @@
                         alert("⚠️ Cannot edit this exam.\n\nStudents have already submitted answers. Editing is locked to ensure grading integrity.");
                     } else {
                         setEditingExamId(exam.id);
-                        setNewExam({ ...exam, questions: exam.questions || [] });
+                        setNewExam({ ...exam, questions: exam.questions || [], instructions: exam.instructions || { multiple_choice: '', true_false: '', identification: '', essay: '' } });
                         setView("create");
                     }
                 });
@@ -491,6 +496,35 @@
                 });
             };
 
+            const InstructionsModal = ({ onClose }) => (
+                <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-navy-light rounded-2xl w-full max-w-2xl shadow-2xl border border-navy-lighter relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-cream"><Icons.X/></button>
+                        <div className="p-8">
+                            <h2 className="text-2xl font-bold text-gold mb-6 flex items-center gap-2"><Icons.Info size={28}/> Teacher's Guide</h2>
+                            <div className="space-y-6 text-sm text-slate-300">
+                                <div>
+                                    <h3 className="font-bold text-cream mb-2 text-lg">1. Creating Exams</h3>
+                                    <p>Click <span className="text-gold font-bold">+ Create Exam</span>. Fill in the title, subject, and year level. Add questions (Multiple Choice, True/False, Identification, Essay). Don't forget to set points per question.</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-cream mb-2 text-lg">2. Publishing</h3>
+                                    <p>Exams are saved as <span className="text-slate-400 border px-1 rounded bg-navy-dark">Draft</span> by default. Click <span className="text-green-400 font-bold">Go Live</span> to make them visible to students. You can unpublish anytime.</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-cream mb-2 text-lg">3. Grading & Results</h3>
+                                    <p>Click the <span className="text-purple-400"><Icons.Eye size={14} className="inline"/></span> icon on an exam card to view submissions. Objective questions are auto-graded. Use the <b>Edit</b> button in the results table to manually grade essays or override scores.</p>
+                                </div>
+                                <div className="bg-navy-dark p-4 rounded-xl border border-navy-lighter">
+                                    <p className="text-xs text-gold"><span className="font-bold">Note:</span> Once students start submitting answers, you cannot edit the exam questions to preserve data integrity.</p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="w-full mt-8 bg-navy hover:bg-navy-dark text-cream border border-navy-lighter py-3 rounded-xl font-bold transition-all">Got it</button>
+                        </div>
+                    </div>
+                </div>
+            );
+
             if (view === "results") return <ResultsDashboard examId={selectedExamId} onClose={() => setView("list")} />;
 
             return (
@@ -501,6 +535,8 @@
                             <div><h1 className="text-xl font-bold text-cream tracking-tight">FocusExam</h1><p className="text-xs text-slate-400 font-medium">Teacher Dashboard</p></div>
                         </div>
                         <div className="flex items-center gap-4">
+                            <button onClick={() => setShowHelp(true)} className="text-gold hover:text-gold-light transition-colors flex items-center gap-2 text-sm font-bold bg-gold/10 px-3 py-2 rounded-lg border border-gold/20"><Icons.Info size={18}/> Help & Guide</button>
+                            <div className="h-6 w-px bg-navy-lighter"></div>
                             <div className="hidden md:flex flex-col items-end mr-2">
                                 <span className="text-sm font-bold text-cream">{teacherName}</span>
                                 <span className="text-xs text-slate-500">{user.email}</span>
@@ -553,6 +589,24 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        
+                                        <div className="bg-navy-light p-6 rounded-2xl shadow-xl border border-navy-lighter">
+                                            <h3 className="font-bold text-cream mb-4 flex items-center gap-2 pb-2 border-b border-navy-lighter"><Icons.Info size={20} className="text-gold"/> Section Instructions (Optional)</h3>
+                                            <div className="space-y-4">
+                                                {QUESTION_TYPES_ORDER.map(section => (
+                                                    <div key={section.type}>
+                                                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">{section.title}</label>
+                                                        <textarea 
+                                                            className="w-full p-3 rounded-xl text-sm h-20 resize-none" 
+                                                            placeholder={`Instructions for ${section.title}...`} 
+                                                            value={newExam.instructions[section.type] || ''} 
+                                                            onChange={e => setNewExam({...newExam, instructions: {...newExam.instructions, [section.type]: e.target.value}})}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                         <button onClick={saveExam} className="w-full bg-gold text-navy py-4 rounded-xl font-bold shadow-lg shadow-gold/20 hover:bg-gold-light flex justify-center gap-2 transition-all hover:-translate-y-1"><Icons.Check size={20}/> {editingExamId ? 'Update Exam' : 'Save Draft'}</button>
                                     </div>
                                     <div className="lg:col-span-8 space-y-6">
@@ -637,6 +691,7 @@
                             </div>
                         )}
                     </div>
+                    {showHelp && <InstructionsModal onClose={()=>setShowHelp(false)} />}
                 </div>
             );
         };
@@ -852,6 +907,7 @@
             const [completedExamIds, setCompletedExamIds] = useState(new Set());
             const [profileData, setProfileData] = useState(null);
             const [step, setStep] = useState(1); 
+            const [showHelp, setShowHelp] = useState(false);
 
             const handleStudentLogin = () => {
                 const provider = new firebase.auth.GoogleAuthProvider();
@@ -940,14 +996,21 @@
             
             const renderStudentSections = () => {
                 const questions = activeExam.questions || [];
+                const inst = activeExam.instructions || {};
+                
                 return QUESTION_TYPES_ORDER.map(section => {
                     const qs = questions.filter(q => q.type === section.type);
                     if (qs.length === 0) return null;
                     return (
                         <div key={section.type} className="mb-8 animate-fade-in">
-                            <h3 className="text-xl font-bold text-gold mb-4 border-b border-navy-lighter pb-2 flex items-center gap-2">
+                            <h3 className="text-xl font-bold text-gold mb-2 border-b border-navy-lighter pb-2 flex items-center gap-2">
                                 <span className="w-1.5 h-4 bg-cream rounded-full"></span> {section.title}
                             </h3>
+                            {inst[section.type] && (
+                                <div className="mb-6 bg-navy-dark/50 border-l-4 border-gold p-4 rounded-r-xl text-slate-300 text-sm italic">
+                                    {inst[section.type]}
+                                </div>
+                            )}
                             <div className="space-y-6">
                                 {qs.map((q, index) => (
                                     <div key={q.id} className="bg-navy-light p-6 rounded-2xl border border-navy-lighter shadow-lg hover:border-gold/30 transition-colors">
@@ -991,6 +1054,32 @@
                     );
                 });
             };
+
+            const StudentInstructionsModal = ({ onClose }) => (
+                <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-navy-light rounded-2xl w-full max-w-2xl shadow-2xl border border-navy-lighter relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-cream"><Icons.X/></button>
+                        <div className="p-8">
+                            <h2 className="text-2xl font-bold text-gold mb-6 flex items-center gap-2"><Icons.Info size={28}/> Student Guide</h2>
+                            <div className="space-y-6 text-sm text-slate-300">
+                                <div>
+                                    <h3 className="font-bold text-cream mb-2 text-lg">1. Finding Exams</h3>
+                                    <p>Exams appear in your Lobby based on your <b>Year Level</b> and <b>Selected Teachers</b>. If you can't see an exam, go back to profile setup and make sure you've checked the right teacher.</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-cream mb-2 text-lg">2. Taking the Test</h3>
+                                    <p>Once you click <span className="text-green-400 font-bold">Start</span>, the exam begins. <span className="text-red-400 font-bold">WARNING:</span> Do not switch browser tabs or minimize the window. We track "focus loss" events, and your teacher will be notified of potential cheating.</p>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-cream mb-2 text-lg">3. Scoring</h3>
+                                    <p>Objective questions (Multiple Choice, True/False) are graded automatically. Essays and Identification questions may require manual review by your teacher. Your final score will be updated once the teacher finishes checking.</p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="w-full mt-8 bg-navy hover:bg-navy-dark text-cream border border-navy-lighter py-3 rounded-xl font-bold transition-all">Got it</button>
+                        </div>
+                    </div>
+                </div>
+            );
 
             if (!loginUser) return (
                 <div className="min-h-screen flex items-center justify-center p-4 bg-navy">
@@ -1075,10 +1164,13 @@
                         <div className="max-w-md w-full bg-navy-light/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 relative border border-navy-lighter z-10">
                             <div className="flex justify-between items-center mb-8">
                                 <button onClick={onBack} className="text-slate-500 hover:text-cream transition-colors"><Icons.X size={24}/></button>
-                                <div className="text-right">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Student</p>
-                                    <p className="text-sm font-bold text-cream">{loginUser.displayName}</p>
-                                    <span className="text-[10px] bg-navy-dark text-gold px-2 py-0.5 rounded border border-gold/20 mt-1 inline-block">{profileData?.yearLevel}</span>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => setShowHelp(true)} className="bg-navy-dark text-gold p-2 rounded-lg border border-navy-lighter hover:bg-navy transition-colors"><Icons.Info size={20}/></button>
+                                    <div className="text-right">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Student</p>
+                                        <p className="text-sm font-bold text-cream">{loginUser.displayName}</p>
+                                        <span className="text-[10px] bg-navy-dark text-gold px-2 py-0.5 rounded border border-gold/20 mt-1 inline-block">{profileData?.yearLevel}</span>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -1113,6 +1205,7 @@
                                 </div>
                             )}
                         </div>
+                        {showHelp && <StudentInstructionsModal onClose={()=>setShowHelp(false)} />}
                     </div>
             );
             
