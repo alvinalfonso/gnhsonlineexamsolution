@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusExam - Dark Mode</title>
+    <title>FocusExam - Modern Platform</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -78,6 +78,12 @@
         input[type="checkbox"], input[type="radio"] {
             accent-color: #F5C400;
         }
+        
+        /* Sitemap Tree Lines */
+        .tree-line {
+            position: absolute;
+            background-color: #1e3a8a;
+        }
     </style>
 </head>
 <body class="bg-navy text-cream selection:bg-gold-light selection:text-navy min-h-screen">
@@ -109,7 +115,9 @@
             Clock: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>,
             ThumbsUp: (p) => <Icon {...p}><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></Icon>,
             ThumbsDown: (p) => <Icon {...p}><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></Icon>,
-            ChevronRight: (p) => <Icon {...p}><polyline points="9 18 15 12 9 6" /></Icon>
+            ChevronRight: (p) => <Icon {...p}><polyline points="9 18 15 12 9 6" /></Icon>,
+            Map: (p) => <Icon {...p}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></Icon>,
+            Info: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></Icon>
         };
 
         // --- CONFIG ---
@@ -1166,42 +1174,152 @@
         };
 
         // 6. LANDING & LOGIN
-        const LandingPage = ({ onSelectRole }) => (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-navy relative overflow-hidden">
-                {/* Abstract Background Shapes */}
-                <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-gold/5 rounded-full blur-[100px] translate-x-1/4 -translate-y-1/4"></div>
-                <div className="absolute bottom-0 left-0 w-[40vw] h-[40vw] bg-navy-light/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4"></div>
-
-                <div className="max-w-5xl w-full bg-navy-light/50 backdrop-blur-xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-navy-lighter z-10">
-                    <div className="bg-navy p-16 flex flex-col justify-center text-white md:w-5/12 relative border-r border-navy-lighter">
-                        <div className="relative z-10">
-                            <div className="w-16 h-16 bg-gold rounded-2xl flex items-center justify-center text-navy mb-8 shadow-lg shadow-gold/20"><Icons.Shield size={40}/></div>
-                            <h1 className="text-5xl font-extrabold mb-6 text-cream tracking-tight">Focus<span className="text-gold">Exam</span></h1>
-                            <p className="text-slate-400 text-lg leading-relaxed">The secure, modern assessment platform designed for academic excellence.</p>
+        
+        // --- NEW COMPONENTS ---
+        const InstructionsSection = () => {
+            const [tab, setTab] = useState('student');
+            return (
+                <div className="py-20 px-6 max-w-6xl mx-auto border-t border-navy-lighter mt-16">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl font-bold text-cream mb-4">How It Works</h2>
+                        <div className="flex justify-center gap-4">
+                            <button onClick={()=>setTab('student')} className={`px-6 py-2 rounded-full font-bold transition-all ${tab==='student'?'bg-gold text-navy':'bg-navy-light text-slate-400 border border-navy-lighter hover:text-cream'}`}>For Students</button>
+                            <button onClick={()=>setTab('teacher')} className={`px-6 py-2 rounded-full font-bold transition-all ${tab==='teacher'?'bg-gold text-navy':'bg-navy-light text-slate-400 border border-navy-lighter hover:text-cream'}`}>For Teachers</button>
                         </div>
                     </div>
-                    <div className="p-16 flex flex-col justify-center md:w-7/12 space-y-6">
-                        <h2 className="text-2xl font-bold text-cream mb-4">Choose your portal</h2>
-                        <button onClick={() => onSelectRole('teacher')} className="w-full p-6 border border-navy-lighter bg-navy-dark rounded-2xl hover:border-gold hover:bg-navy hover:shadow-[0_0_20px_rgba(245,196,0,0.1)] text-left transition-all group">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h3 className="font-bold text-xl text-cream group-hover:text-gold transition-colors">Teacher Portal</h3>
-                                    <p className="text-slate-500 text-sm mt-1">Create & manage assessments</p>
-                                </div>
-                                <div className="text-slate-600 group-hover:text-gold transition-colors"><Icons.ChevronRight size={24}/></div>
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div className="space-y-8 animate-fade-in" key={tab}>
+                            {tab === 'student' ? (
+                                <>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-navy-light border border-gold text-gold flex items-center justify-center font-bold shrink-0">1</div>
+                                        <div><h3 className="text-xl font-bold text-cream mb-1">Login & Setup</h3><p className="text-slate-400">Sign in with your Google account. Select your current Grade Level and check all your subject teachers.</p></div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-navy-light border border-gold text-gold flex items-center justify-center font-bold shrink-0">2</div>
+                                        <div><h3 className="text-xl font-bold text-cream mb-1">Enter Exam Lobby</h3><p className="text-slate-400">Your dashboard will show all active exams published by your selected teachers. Click 'Start' when ready.</p></div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-navy-light border border-gold text-gold flex items-center justify-center font-bold shrink-0">3</div>
+                                        <div><h3 className="text-xl font-bold text-cream mb-1">Take the Test</h3><p className="text-slate-400">Answer carefully. Warning: Switching tabs or minimizing the browser will flag your session for cheating.</p></div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-navy-light border border-gold text-gold flex items-center justify-center font-bold shrink-0">1</div>
+                                        <div><h3 className="text-xl font-bold text-cream mb-1">Teacher Access</h3><p className="text-slate-400">Login with your authorized email. Set your display name so students can find you easily.</p></div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-navy-light border border-gold text-gold flex items-center justify-center font-bold shrink-0">2</div>
+                                        <div><h3 className="text-xl font-bold text-cream mb-1">Create Assessment</h3><p className="text-slate-400">Build exams with Multiple Choice, True/False, Essay, and Identification questions. Assign points per question.</p></div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-navy-light border border-gold text-gold flex items-center justify-center font-bold shrink-0">3</div>
+                                        <div><h3 className="text-xl font-bold text-cream mb-1">Publish & Grade</h3><p className="text-slate-400">Go live instantly. Use the Results dashboard to auto-grade objective items and manually review essays.</p></div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        <div className="bg-navy-light p-8 rounded-3xl border border-navy-lighter relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full blur-2xl"></div>
+                            <h4 className="font-bold text-gold uppercase tracking-wider mb-4 text-sm"><Icons.Info size={16} className="inline mr-2"/> Platform Security</h4>
+                            <p className="text-slate-300 mb-4 leading-relaxed">FocusExam utilizes real-time activity monitoring to ensure academic integrity. Browser focus events are tracked, and teachers receive a detailed report of any tab-switching incidents during the exam session.</p>
+                            <p className="text-slate-300 leading-relaxed">Data is securely stored and synced instantly, ensuring that no answers are lost due to connectivity issues.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SitemapSection = () => (
+            <div className="bg-navy-dark py-16 border-t border-navy-lighter mt-12">
+                <div className="max-w-6xl mx-auto px-6">
+                    <h2 className="text-2xl font-bold text-cream mb-8 flex items-center gap-2"><Icons.Map size={24} className="text-gold"/> Site Structure</h2>
+                    <div className="grid md:grid-cols-2 gap-12 text-sm">
+                        <div className="relative pl-6 border-l-2 border-navy-light space-y-6">
+                            <div className="relative">
+                                <div className="absolute -left-[31px] top-3 w-6 h-0.5 bg-navy-light"></div>
+                                <h3 className="text-gold font-bold text-lg mb-2">Teacher Portal</h3>
+                                <ul className="space-y-3 text-slate-400">
+                                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>Login (Google Auth)</li>
+                                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>Name Setup (First Time)</li>
+                                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>Dashboard</li>
+                                    <ul className="pl-6 space-y-2 border-l border-navy-lighter ml-1 mt-2">
+                                        <li>• Create/Edit Exam</li>
+                                        <li>• Publish/Unpublish</li>
+                                        <li>• View Results & Grade</li>
+                                    </ul>
+                                </ul>
                             </div>
+                        </div>
+                        <div className="relative pl-6 border-l-2 border-navy-light space-y-6">
+                            <div className="relative">
+                                <div className="absolute -left-[31px] top-3 w-6 h-0.5 bg-navy-light"></div>
+                                <h3 className="text-cream font-bold text-lg mb-2">Student Portal</h3>
+                                <ul className="space-y-3 text-slate-400">
+                                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>Login (Google Auth)</li>
+                                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>Profile Setup (Year & Teachers)</li>
+                                    <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>Exam Lobby</li>
+                                    <ul className="pl-6 space-y-2 border-l border-navy-lighter ml-1 mt-2">
+                                        <li>• Exam Room (Active)</li>
+                                        <li>• Submission Success</li>
+                                    </ul>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-12 text-center text-slate-600 text-xs">
+                        &copy; 2024 FocusExam Platform. Secure Assessment Solution.
+                    </div>
+                </div>
+            </div>
+        );
+
+        const LandingPage = ({ onSelectRole }) => (
+            <div className="min-h-screen bg-navy relative overflow-x-hidden">
+                {/* Hero Section */}
+                <div className="flex flex-col items-center justify-center pt-20 pb-10 px-4 relative z-10">
+                    <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-gold/5 rounded-full blur-[100px] translate-x-1/4 -translate-y-1/4 -z-10"></div>
+                    <div className="absolute bottom-0 left-0 w-[40vw] h-[40vw] bg-navy-light/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 -z-10"></div>
+
+                    <div className="text-center mb-12 animate-fade-in">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gold to-yellow-600 rounded-3xl text-navy mb-6 shadow-2xl shadow-gold/20 transform rotate-3">
+                            <Icons.Shield size={48}/>
+                        </div>
+                        <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-cream tracking-tight">Focus<span className="text-transparent bg-clip-text bg-gradient-to-r from-gold to-yellow-200">Exam</span></h1>
+                        <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                            The secure, modern assessment platform designed for academic excellence. 
+                            Seamlessly connect teachers and students in a distraction-free environment.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 max-w-4xl w-full">
+                        <button onClick={() => onSelectRole('teacher')} className="group p-8 bg-navy-light/50 backdrop-blur-md border border-navy-lighter rounded-3xl hover:border-gold hover:bg-navy-dark transition-all duration-300 hover:-translate-y-1 shadow-xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-navy rounded-xl text-gold group-hover:bg-gold group-hover:text-navy transition-colors"><Icons.Book size={32}/></div>
+                                <Icons.ChevronRight size={24} className="text-slate-600 group-hover:text-gold transition-colors"/>
+                            </div>
+                            <h3 className="text-2xl font-bold text-cream mb-2">Teacher Portal</h3>
+                            <p className="text-slate-400 text-sm">Create assessments, manage classes, and grade submissions with ease.</p>
                         </button>
-                        <button onClick={() => onSelectRole('student')} className="w-full p-6 border border-navy-lighter bg-navy-dark rounded-2xl hover:border-cream hover:bg-navy hover:shadow-lg text-left transition-all group">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h3 className="font-bold text-xl text-cream">Student Portal</h3>
-                                    <p className="text-slate-500 text-sm mt-1">Take assigned exams</p>
-                                </div>
-                                <div className="text-slate-600 group-hover:text-cream transition-colors"><Icons.ChevronRight size={24}/></div>
+
+                        <button onClick={() => onSelectRole('student')} className="group p-8 bg-navy-light/50 backdrop-blur-md border border-navy-lighter rounded-3xl hover:border-cream hover:bg-navy-dark transition-all duration-300 hover:-translate-y-1 shadow-xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-navy rounded-xl text-cream group-hover:bg-cream group-hover:text-navy transition-colors"><Icons.Users size={32}/></div>
+                                <Icons.ChevronRight size={24} className="text-slate-600 group-hover:text-cream transition-colors"/>
                             </div>
+                            <h3 className="text-2xl font-bold text-cream mb-2">Student Portal</h3>
+                            <p className="text-slate-400 text-sm">Access your assigned exams securely and track your progress.</p>
                         </button>
                     </div>
                 </div>
+
+                {/* Instructions Section */}
+                <InstructionsSection />
+
+                {/* Sitemap Section */}
+                <SitemapSection />
             </div>
         );
 
