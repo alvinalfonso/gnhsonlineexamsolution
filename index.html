@@ -93,7 +93,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useLayoutEffect } = React;
 
         // --- ICONS ---
         const Icon = ({ size = 20, className="", ...props }) => (
@@ -155,6 +155,36 @@
         if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
         const auth = firebase.auth();
         const db = firebase.database();
+
+        // --- HELPER: CALCULATE SCORE ---
+        // Moved outside components to be reusable and stateless
+        const calculateScore = (submission, examData) => {
+            if (!examData || !examData.questions) return "N/A";
+            let score = 0;
+            let max = 0; 
+            
+            const questions = Array.isArray(examData.questions) ? examData.questions : Object.values(examData.questions || {});
+
+            questions.forEach(q => {
+                const points = q.points || 1;
+                max += points;
+                
+                if (submission.manualGrades && submission.manualGrades[q.id] !== undefined) {
+                    score += submission.manualGrades[q.id];
+                    return;
+                }
+
+                const studentAns = submission.answers[q.id];
+                if (!studentAns) return;
+
+                if (q.type === 'multiple_choice' || q.type === 'true_false') {
+                    if (studentAns === q.correctAnswer) score += points;
+                } else if (q.type === 'identification') {
+                    if (q.correctAnswer && studentAns.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) score += points;
+                }
+            });
+            return max > 0 ? `${score}/${max}` : "Manual";
+        };
 
         // --- HELPER: GENERATE STUDENT EXAM HTML ---
         // Keeps a simpler light theme for the downloadable file to ensure printability
@@ -377,6 +407,151 @@
                         <p className="text-slate-400 mb-8 text-sm">Please set up your display name to continue.</p>
                         <input className="w-full p-4 rounded-xl mb-4 text-center text-lg font-bold" placeholder="e.g. Mr. Alfonso" value={name} onChange={e => setName(e.target.value)} />
                         <button onClick={handleSave} className="w-full bg-gold text-navy py-4 rounded-xl font-bold shadow-lg shadow-gold/20 hover:bg-gold-light hover:scale-[1.02] active:scale-95 transition-all">Continue to Dashboard</button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- GRADING MODAL (Moved out of ResultsDashboard to fix scroll reset) ---
+        const GradingModal = ({ submission, examData, onClose }) => {
+            const questions = examData.questions || [];
+            const scrollRef = useRef(null);
+            const savedScroll = useRef(0);
+
+            // Capture scroll on scroll event to persist position across re-renders
+            const handleScroll = (e) => {
+                savedScroll.current = e.target.scrollTop;
+            };
+
+            // Restore scroll after every render/update
+            useLayoutEffect(() => {
+                if(scrollRef.current) {
+                    scrollRef.current.scrollTop = savedScroll.current;
+                }
+            });
+
+            const setManualGrade = (subId, qId, val) => {
+                db.ref(`submissions/${subId}/manualGrades/${qId}`).set(val);
+            };
+
+            const toggleReviewStatus = (subId, qId, status) => {
+                db.ref(`submissions/${subId}/reviews/${qId}`).set(status);
+            };
+
+            return (
+                <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-navy-light rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl border border-navy-lighter animate-slide-up">
+                        <div className="p-6 border-b border-navy-lighter flex justify-between items-center bg-navy-dark/50 rounded-t-2xl">
+                            <div>
+                                <h3 className="text-xl font-bold text-cream">{submission.studentName}</h3>
+                                <p className="text-sm text-slate-400">Grading Submission</p>
+                            </div>
+                            <div className="text-right mr-4 bg-navy p-2 rounded-lg border border-navy-lighter">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Score</p>
+                                <p className="text-2xl font-bold text-gold">{calculateScore(submission, examData)}</p>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-navy-lighter rounded-full text-slate-400 hover:text-cream transition-colors"><Icons.X/></button>
+                        </div>
+                        <div 
+                            ref={scrollRef}
+                            onScroll={handleScroll}
+                            className="flex-1 overflow-y-auto p-6 space-y-6 scroller bg-navy"
+                        >
+                            {questions.map((q, idx) => {
+                                const studentAns = submission.answers[q.id];
+                                const manualGrade = submission.manualGrades?.[q.id];
+                                const isReviewed = submission.reviews?.[q.id];
+                                const maxPoints = q.points || 1;
+                                
+                                let currentScore = 0;
+                                let isManual = manualGrade !== undefined;
+
+                                if (isManual) {
+                                    currentScore = manualGrade;
+                                } else {
+                                    if (q.type === 'multiple_choice' || q.type === 'true_false') {
+                                            if(studentAns === q.correctAnswer) currentScore = maxPoints;
+                                    }
+                                    else if (q.type === 'identification' && q.correctAnswer) {
+                                        if(studentAns?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) currentScore = maxPoints;
+                                    }
+                                }
+                                
+                                const isCorrect = currentScore === maxPoints;
+                                const isPartial = currentScore > 0 && currentScore < maxPoints;
+                                const borderColor = isCorrect ? 'border-green-500/50' : (isPartial ? 'border-yellow-500/50' : 'border-red-500/50');
+                                const bgColor = isCorrect ? 'bg-green-900/10' : (isPartial ? 'bg-yellow-900/10' : 'bg-red-900/10');
+
+                                return (
+                                    <div key={q.id} className={`p-5 rounded-xl border-l-4 shadow-sm ${borderColor} ${bgColor} bg-navy-light`}>
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Question {idx+1} • {q.type.replace('_',' ')}</p>
+                                                    <span className="text-[10px] bg-navy-dark text-slate-300 px-1.5 py-0.5 rounded font-bold border border-navy-lighter">{maxPoints} pts</span>
+                                                    {isReviewed && <span className="text-[10px] bg-green-900 text-green-300 px-1.5 py-0.5 rounded font-bold border border-green-700">REVIEWED</span>}
+                                                </div>
+                                                <p className="font-medium text-cream mb-4 text-lg">{q.text}</p>
+                                                
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                    <div className="bg-navy-dark p-4 rounded-xl border border-navy-lighter">
+                                                        <span className="text-xs text-slate-500 font-bold block mb-2 uppercase">Student Answer</span>
+                                                        <span className="text-cream font-medium whitespace-pre-wrap block">{studentAns || <i className="text-slate-600">No Answer</i>}</span>
+                                                    </div>
+                                                    {(q.correctAnswer) && (
+                                                        <div className="bg-navy-dark p-4 rounded-xl border border-navy-lighter opacity-75">
+                                                            <span className="text-xs text-slate-500 font-bold block mb-2 uppercase">Correct Key</span>
+                                                            <span className="text-green-400 font-bold font-mono">{q.correctAnswer}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-3 min-w-[140px] ">
+                                                <div className="bg-navy-dark p-3 rounded-xl border border-navy-lighter w-full flex flex-col items-center">
+                                                    <p className="text-[10px] font-bold uppercase text-slate-500 mb-2">{isManual ? 'Manual Override' : 'Auto Grade'}</p>
+                                                    
+                                                    {(q.type === 'essay' || q.type === 'identification') ? (
+                                                        <div className="flex flex-col items-center gap-1 w-full">
+                                                            <div className="flex items-center gap-2 w-full justify-center">
+                                                                <input 
+                                                                    type="number" 
+                                                                    min="0" 
+                                                                    max={maxPoints}
+                                                                    value={isManual ? manualGrade : currentScore}
+                                                                    onChange={(e) => {
+                                                                        let val = parseInt(e.target.value);
+                                                                        if(isNaN(val)) val = 0;
+                                                                        if(val > maxPoints) val = maxPoints;
+                                                                        if(val < 0) val = 0;
+                                                                        setManualGrade(submission.id, q.id, val);
+                                                                    }}
+                                                                    className="w-16 p-2 text-center font-bold text-xl rounded-lg focus:border-gold outline-none bg-navy text-gold"
+                                                                />
+                                                                <span className="text-xs text-slate-500 font-bold">/ {maxPoints}</span>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => setManualGrade(submission.id, q.id, maxPoints)} className={`p-3 rounded-lg transition-all ${isCorrect ? 'bg-green-600 text-white shadow-lg shadow-green-900/50' : 'bg-navy hover:bg-navy-light text-slate-500 hover:text-green-400'}`} title="Mark Correct"><Icons.ThumbsUp size={20}/></button>
+                                                            <button onClick={() => setManualGrade(submission.id, q.id, 0)} className={`p-3 rounded-lg transition-all ${!isCorrect && currentScore === 0 ? 'bg-red-600 text-white shadow-lg shadow-red-900/50' : 'bg-navy hover:bg-navy-light text-slate-500 hover:text-red-400'}`} title="Mark Incorrect"><Icons.ThumbsDown size={20}/></button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <button 
+                                                    onClick={() => toggleReviewStatus(submission.id, q.id, !isReviewed)}
+                                                    className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${isReviewed ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-navy-dark text-slate-400 border border-navy-lighter hover:border-gold hover:text-gold'}`}
+                                                >
+                                                    {isReviewed ? <><Icons.Check size={14}/> Reviewed</> : "Mark Reviewed"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                        <div className="p-4 border-t border-navy-lighter bg-navy-dark/50 text-center rounded-b-2xl text-xs text-slate-500">
+                            All changes are saved automatically.
+                        </div>
                     </div>
                 </div>
             );
@@ -755,42 +930,6 @@
                 });
             }, [examId]);
 
-            const calculateScore = (submission) => {
-                if (!examData || !examData.questions) return "N/A";
-                let score = 0;
-                let max = 0; 
-                
-                const questions = Array.isArray(examData.questions) ? examData.questions : Object.values(examData.questions || {});
-
-                questions.forEach(q => {
-                    const points = q.points || 1;
-                    max += points;
-                    
-                    if (submission.manualGrades && submission.manualGrades[q.id] !== undefined) {
-                        score += submission.manualGrades[q.id];
-                        return;
-                    }
-
-                    const studentAns = submission.answers[q.id];
-                    if (!studentAns) return;
-
-                    if (q.type === 'multiple_choice' || q.type === 'true_false') {
-                        if (studentAns === q.correctAnswer) score += points;
-                    } else if (q.type === 'identification') {
-                        if (q.correctAnswer && studentAns.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) score += points;
-                    }
-                });
-                return max > 0 ? `${score}/${max}` : "Manual";
-            };
-
-            const setManualGrade = (subId, qId, val) => {
-                db.ref(`submissions/${subId}/manualGrades/${qId}`).set(val);
-            };
-
-            const toggleReviewStatus = (subId, qId, status) => {
-                db.ref(`submissions/${subId}/reviews/${qId}`).set(status);
-            };
-
             const handleExport = () => {
                 if (!examData) return;
                 const questions = examData.questions || [];
@@ -819,7 +958,7 @@
                         s.studentName,
                         new Date(s.submittedAt).toLocaleString(),
                         s.cheatStats?.count || 0,
-                        calculateScore(s)
+                        calculateScore(s, examData)
                     ];
                     questions.forEach(q => {
                         const ans = s.answers[q.id] || "";
@@ -832,123 +971,6 @@
                 const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
                 XLSX.utils.book_append_sheet(wb, ws, "Results");
                 XLSX.writeFile(wb, `${examData.title}_Results.xlsx`);
-            };
-
-            const GradingModal = ({ submission, onClose }) => {
-                const questions = examData.questions || [];
-                return (
-                    <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                        <div className="bg-navy-light rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl border border-navy-lighter animate-slide-up">
-                            <div className="p-6 border-b border-navy-lighter flex justify-between items-center bg-navy-dark/50 rounded-t-2xl">
-                                <div>
-                                    <h3 className="text-xl font-bold text-cream">{submission.studentName}</h3>
-                                    <p className="text-sm text-slate-400">Grading Submission</p>
-                                </div>
-                                <div className="text-right mr-4 bg-navy p-2 rounded-lg border border-navy-lighter">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Score</p>
-                                    <p className="text-2xl font-bold text-gold">{calculateScore(submission)}</p>
-                                </div>
-                                <button onClick={onClose} className="p-2 hover:bg-navy-lighter rounded-full text-slate-400 hover:text-cream transition-colors"><Icons.X/></button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-6 space-y-6 scroller bg-navy">
-                                {questions.map((q, idx) => {
-                                    const studentAns = submission.answers[q.id];
-                                    const manualGrade = submission.manualGrades?.[q.id];
-                                    const isReviewed = submission.reviews?.[q.id];
-                                    const maxPoints = q.points || 1;
-                                    
-                                    let currentScore = 0;
-                                    let isManual = manualGrade !== undefined;
-
-                                    if (isManual) {
-                                        currentScore = manualGrade;
-                                    } else {
-                                        if (q.type === 'multiple_choice' || q.type === 'true_false') {
-                                             if(studentAns === q.correctAnswer) currentScore = maxPoints;
-                                        }
-                                        else if (q.type === 'identification' && q.correctAnswer) {
-                                            if(studentAns?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) currentScore = maxPoints;
-                                        }
-                                    }
-                                    
-                                    const isCorrect = currentScore === maxPoints;
-                                    const isPartial = currentScore > 0 && currentScore < maxPoints;
-                                    const borderColor = isCorrect ? 'border-green-500/50' : (isPartial ? 'border-yellow-500/50' : 'border-red-500/50');
-                                    const bgColor = isCorrect ? 'bg-green-900/10' : (isPartial ? 'bg-yellow-900/10' : 'bg-red-900/10');
-
-                                    return (
-                                        <div key={q.id} className={`p-5 rounded-xl border-l-4 shadow-sm ${borderColor} ${bgColor} bg-navy-light`}>
-                                            <div className="flex justify-between items-start gap-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Question {idx+1} • {q.type.replace('_',' ')}</p>
-                                                        <span className="text-[10px] bg-navy-dark text-slate-300 px-1.5 py-0.5 rounded font-bold border border-navy-lighter">{maxPoints} pts</span>
-                                                        {isReviewed && <span className="text-[10px] bg-green-900 text-green-300 px-1.5 py-0.5 rounded font-bold border border-green-700">REVIEWED</span>}
-                                                    </div>
-                                                    <p className="font-medium text-cream mb-4 text-lg">{q.text}</p>
-                                                    
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                                        <div className="bg-navy-dark p-4 rounded-xl border border-navy-lighter">
-                                                            <span className="text-xs text-slate-500 font-bold block mb-2 uppercase">Student Answer</span>
-                                                            <span className="text-cream font-medium whitespace-pre-wrap block">{studentAns || <i className="text-slate-600">No Answer</i>}</span>
-                                                        </div>
-                                                        {(q.correctAnswer) && (
-                                                            <div className="bg-navy-dark p-4 rounded-xl border border-navy-lighter opacity-75">
-                                                                <span className="text-xs text-slate-500 font-bold block mb-2 uppercase">Correct Key</span>
-                                                                <span className="text-green-400 font-bold font-mono">{q.correctAnswer}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-col items-end gap-3 min-w-[140px] ">
-                                                    <div className="bg-navy-dark p-3 rounded-xl border border-navy-lighter w-full flex flex-col items-center">
-                                                        <p className="text-[10px] font-bold uppercase text-slate-500 mb-2">{isManual ? 'Manual Override' : 'Auto Grade'}</p>
-                                                        
-                                                        {(q.type === 'essay' || q.type === 'identification') ? (
-                                                            <div className="flex flex-col items-center gap-1 w-full">
-                                                                <div className="flex items-center gap-2 w-full justify-center">
-                                                                    <input 
-                                                                        type="number" 
-                                                                        min="0" 
-                                                                        max={maxPoints}
-                                                                        value={isManual ? manualGrade : currentScore}
-                                                                        onChange={(e) => {
-                                                                            let val = parseInt(e.target.value);
-                                                                            if(isNaN(val)) val = 0;
-                                                                            if(val > maxPoints) val = maxPoints;
-                                                                            if(val < 0) val = 0;
-                                                                            setManualGrade(submission.id, q.id, val);
-                                                                        }}
-                                                                        className="w-16 p-2 text-center font-bold text-xl rounded-lg focus:border-gold outline-none bg-navy text-gold"
-                                                                    />
-                                                                    <span className="text-xs text-slate-500 font-bold">/ {maxPoints}</span>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex gap-2">
-                                                                <button onClick={() => setManualGrade(submission.id, q.id, maxPoints)} className={`p-3 rounded-lg transition-all ${isCorrect ? 'bg-green-600 text-white shadow-lg shadow-green-900/50' : 'bg-navy hover:bg-navy-light text-slate-500 hover:text-green-400'}`} title="Mark Correct"><Icons.ThumbsUp size={20}/></button>
-                                                                <button onClick={() => setManualGrade(submission.id, q.id, 0)} className={`p-3 rounded-lg transition-all ${!isCorrect && currentScore === 0 ? 'bg-red-600 text-white shadow-lg shadow-red-900/50' : 'bg-navy hover:bg-navy-light text-slate-500 hover:text-red-400'}`} title="Mark Incorrect"><Icons.ThumbsDown size={20}/></button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => toggleReviewStatus(submission.id, q.id, !isReviewed)}
-                                                        className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${isReviewed ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-navy-dark text-slate-400 border border-navy-lighter hover:border-gold hover:text-gold'}`}
-                                                    >
-                                                        {isReviewed ? <><Icons.Check size={14}/> Reviewed</> : "Mark Reviewed"}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                            <div className="p-4 border-t border-navy-lighter bg-navy-dark/50 text-center rounded-b-2xl text-xs text-slate-500">
-                                All changes are saved automatically.
-                            </div>
-                        </div>
-                    </div>
-                );
             };
 
             const activeGradingSub = subs.find(s => s.id === gradingSubId);
@@ -973,7 +995,7 @@
                                         {subs.map((s, i) => (
                                             <tr key={i} className="bg-navy-light hover:bg-navy-lighter transition-colors rounded-xl group">
                                                 <td className="p-4 font-bold text-cream rounded-l-xl border-y border-l border-navy-lighter group-hover:border-navy-light">{s.studentName}</td>
-                                                <td className="p-4 font-bold text-gold border-y border-navy-lighter group-hover:border-navy-light text-lg">{calculateScore(s)}</td>
+                                                <td className="p-4 font-bold text-gold border-y border-navy-lighter group-hover:border-navy-light text-lg">{calculateScore(s, examData)}</td>
                                                 <td className="p-4 text-slate-400 border-y border-navy-lighter group-hover:border-navy-light"><div className="flex items-center gap-2"><Icons.Clock size={14}/> {new Date(s.submittedAt).toLocaleString()}</div></td>
                                                 <td className="p-4 border-y border-navy-lighter group-hover:border-navy-light"><span className={`px-3 py-1 rounded-full text-xs font-bold border ${s.cheatStats?.count>0?'bg-red-900/20 text-red-400 border-red-900/50':'bg-green-900/20 text-green-400 border-green-900/50'}`}>{s.cheatStats?.count||0} Flags</span></td>
                                                 <td className="p-4 rounded-r-xl border-y border-r border-navy-lighter group-hover:border-navy-light">
@@ -989,7 +1011,7 @@
                             )}
                         </div>
                     </div>
-                    {activeGradingSub && <GradingModal submission={activeGradingSub} onClose={() => setGradingSubId(null)} />}
+                    {activeGradingSub && <GradingModal submission={activeGradingSub} examData={examData} onClose={() => setGradingSubId(null)} />}
                 </div>
             );
         };
@@ -1355,6 +1377,17 @@
                                         <p className="text-sm font-bold text-cream">{loginUser.displayName}</p>
                                         <span className="text-xs bg-navy-dark text-gold px-2 py-0.5 rounded border border-gold/20 mt-1 inline-block">{profileData?.yearLevel}</span>
                                     </div>
+                                </div>
+                            </div>
+
+                             {/* Academic Integrity Warning Block */}
+                            <div className="bg-red-900/20 border border-red-900/50 p-4 rounded-xl mb-6 flex items-start gap-3 shadow-inner">
+                                <div className="text-red-400 mt-1 flex-shrink-0"><Icons.AlertTriangle size={24}/></div>
+                                <div>
+                                    <h3 className="text-red-400 font-bold text-sm uppercase tracking-wider mb-1">Academic Integrity Policy</h3>
+                                    <p className="text-red-200/80 text-xs leading-relaxed">
+                                        FocusExam strictly monitors your session. <b>Switching tabs, minimizing the browser, or clicking outside the exam window</b> will be detected and flagged to your teacher immediately.
+                                    </p>
                                 </div>
                             </div>
                             
