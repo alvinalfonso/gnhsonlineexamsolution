@@ -763,7 +763,7 @@
                                         <div key={q.id} className="p-4 border border-navy-lighter bg-navy-dark rounded-xl relative group hover:border-gold/30 transition-colors">
                                             <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => editQuestion(q)} className="p-1.5 bg-navy-light rounded text-slate-400 hover:text-gold hover:bg-navy-lighter"><Icons.Edit size={14}/></button>
-                                                <button onClick={() => { if(confirm("Remove?")) setNewExam(p => ({ ...p, questions: p.questions.filter(x => x.id !== q.id) })); }} className="p-1.5 bg-navy-light rounded text-slate-400 hover:text-red-400 hover:bg-navy-lighter"><Icons.Trash size={14}/></button>
+                                                <button onClick={() => { if(confirm("Remove?")) setNewExam(p => ({ ...p, questions: p.questions.filter(x => x !== q.id) })); }} className="p-1.5 bg-navy-light rounded text-slate-400 hover:text-red-400 hover:bg-navy-lighter"><Icons.Trash size={14}/></button>
                                             </div>
                                             <div className="flex gap-4">
                                                 <span className="flex-shrink-0 w-6 h-6 bg-navy-light text-slate-400 rounded-full flex items-center justify-center font-bold text-xs border border-navy-lighter">{previewCounter}</span>
@@ -1116,6 +1116,9 @@
             const [timerActive, setTimerActive] = useState(false);
             const [showCalc, setShowCalc] = useState(false);
 
+            // GUARD REF for Submission Status (Fixes Integrity Conflict)
+            const isSubmittingRef = useRef(false);
+
             const handleStudentLogin = () => {
                 const provider = new firebase.auth.GoogleAuthProvider();
                 auth.signInWithPopup(provider).then(res => {
@@ -1170,6 +1173,7 @@
                 if (status !== 'taking') return;
                 
                 const handleCheat = (msg) => {
+                    if (isSubmittingRef.current) return; // FIX: Ignore cheat flags if submitting
                     setCheatCount(c => c + 1);
                     alert(`⚠️ WARNING: ${msg}\n\nYour session has been flagged. This incident will be reported to your teacher.`);
                 };
@@ -1222,11 +1226,13 @@
             const startExam = (exam) => { 
                 setActiveExam(exam); 
                 setStatus('ready'); 
+                isSubmittingRef.current = false; // Reset guard
             };
 
             const beginTest = () => {
                 if(studentName && agreed) {
                     setStatus('taking');
+                    isSubmittingRef.current = false; // Reset guard
                     if(activeExam.duration) {
                         const savedStart = localStorage.getItem(`start_${activeExam.id}_${loginUser.uid}`);
                         const now = Date.now();
@@ -1256,7 +1262,11 @@
             };
 
             const submitFinal = (auto = false) => {
+                if (isSubmittingRef.current) return; // Prevent double submission
+                
                 if(!auto && !confirm("Submit?")) return;
+                
+                isSubmittingRef.current = true; // Lock immediately to prevent integrity flags during alert/blur
                 
                 if(auto) {
                     alert("Time is up! Submitting exam automatically.");
