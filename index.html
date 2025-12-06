@@ -121,7 +121,8 @@
             ChevronRight: (p) => <Icon {...p}><polyline points="9 18 15 12 9 6" /></Icon>,
             Map: (p) => <Icon {...p}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></Icon>,
             Info: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></Icon>,
-            FileSpreadsheet: (p) => <Icon {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></Icon>
+            FileSpreadsheet: (p) => <Icon {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></Icon>,
+            Calculator: (p) => <Icon {...p}><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></Icon>
         };
 
         // --- CONFIG ---
@@ -157,7 +158,6 @@
         const db = firebase.database();
 
         // --- HELPER: CALCULATE SCORE ---
-        // Moved outside components to be reusable and stateless
         const calculateScore = (submission, examData) => {
             if (!examData || !examData.questions) return "N/A";
             let score = 0;
@@ -187,7 +187,6 @@
         };
 
         // --- HELPER: GENERATE STUDENT EXAM HTML ---
-        // Keeps a simpler light theme for the downloadable file to ensure printability
         const downloadHtmlFile = (exam) => {
             const embeddedData = JSON.stringify(exam.questions);
             const embeddedConfig = JSON.stringify(FIREBASE_CONFIG);
@@ -347,7 +346,80 @@
 
         // --- COMPONENTS ---
 
-        // 1. EXAM CARD (Teacher)
+        // 1. CALCULATOR COMPONENT
+        const Calculator = ({ onClose }) => {
+            const [display, setDisplay] = useState('0');
+            const [prev, setPrev] = useState(null);
+            const [op, setOp] = useState(null);
+            const [newNum, setNewNum] = useState(true);
+
+            const handleNum = (num) => {
+                if(newNum) { setDisplay(num); setNewNum(false); }
+                else setDisplay(display === '0' ? num : display + num);
+            };
+
+            const handleOp = (operator) => {
+                setOp(operator);
+                setPrev(parseFloat(display));
+                setNewNum(true);
+            };
+
+            const calculate = () => {
+                if(op && prev !== null) {
+                    const current = parseFloat(display);
+                    let result = 0;
+                    switch(op) {
+                        case '+': result = prev + current; break;
+                        case '-': result = prev - current; break;
+                        case '*': result = prev * current; break;
+                        case '/': result = prev / current; break;
+                        default: return;
+                    }
+                    setDisplay(String(result));
+                    setPrev(null);
+                    setOp(null);
+                    setNewNum(true);
+                }
+            };
+
+            const clear = () => { setDisplay('0'); setPrev(null); setOp(null); setNewNum(true); };
+
+            return (
+                <div className="fixed bottom-4 right-4 w-72 bg-navy-dark border border-gold rounded-2xl shadow-2xl z-50 overflow-hidden animate-slide-up">
+                    <div className="bg-navy-light p-3 flex justify-between items-center border-b border-navy-lighter cursor-grab">
+                        <span className="text-gold font-bold flex items-center gap-2"><Icons.Calculator size={16}/> Calculator</span>
+                        <button onClick={onClose} className="text-slate-400 hover:text-red-400"><Icons.X size={16}/></button>
+                    </div>
+                    <div className="p-4">
+                        <div className="bg-navy p-3 rounded-lg mb-4 text-right text-2xl font-mono text-cream border border-navy-lighter overflow-x-auto">
+                            {display}
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                            {['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+'].map(btn => (
+                                <button 
+                                    key={btn} 
+                                    onClick={() => {
+                                        if(!isNaN(btn) || btn === '.') handleNum(btn);
+                                        else if(btn === '=') calculate();
+                                        else handleOp(btn);
+                                    }}
+                                    className={`p-3 rounded-lg font-bold transition-all ${
+                                        btn === '=' ? 'bg-gold text-navy col-span-2' : 
+                                        ['/','*','-','+'].includes(btn) ? 'bg-navy-light text-gold border border-gold/20' : 
+                                        'bg-navy text-slate-300 hover:bg-navy-light border border-navy-lighter'
+                                    }`}
+                                >
+                                    {btn}
+                                </button>
+                            ))}
+                            <button onClick={clear} className="col-span-2 p-2 bg-red-900/20 text-red-400 rounded-lg border border-red-900/50 text-xs uppercase font-bold hover:bg-red-900/40">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 2. EXAM CARD (Teacher)
         const ExamCard = ({ exam, onToggleStatus, onDelete, onViewResults, onDownload, onEdit }) => {
             const isPublished = exam.status === 'published';
             return (
@@ -386,7 +458,7 @@
             );
         };
 
-        // 2. TEACHER NAME SETUP 
+        // 3. TEACHER NAME SETUP 
         const TeacherNameInput = ({ user, onComplete }) => {
             const [name, setName] = useState("");
             
@@ -412,18 +484,16 @@
             );
         };
 
-        // --- GRADING MODAL (Moved out of ResultsDashboard to fix scroll reset) ---
+        // --- GRADING MODAL ---
         const GradingModal = ({ submission, examData, onClose }) => {
             const questions = examData.questions || [];
             const scrollRef = useRef(null);
             const savedScroll = useRef(0);
 
-            // Capture scroll on scroll event to persist position across re-renders
             const handleScroll = (e) => {
                 savedScroll.current = e.target.scrollTop;
             };
 
-            // Restore scroll after every render/update
             useLayoutEffect(() => {
                 if(scrollRef.current) {
                     scrollRef.current.scrollTop = savedScroll.current;
@@ -432,6 +502,8 @@
 
             const setManualGrade = (subId, qId, val) => {
                 db.ref(`submissions/${subId}/manualGrades/${qId}`).set(val);
+                // FEATURE: Auto-mark as reviewed when manual grade changes
+                db.ref(`submissions/${subId}/reviews/${qId}`).set(true);
             };
 
             const toggleReviewStatus = (subId, qId, status) => {
@@ -462,6 +534,7 @@
                                 const manualGrade = submission.manualGrades?.[q.id];
                                 const isReviewed = submission.reviews?.[q.id];
                                 const maxPoints = q.points || 1;
+                                const isAutoGradedType = q.type === 'multiple_choice' || q.type === 'true_false';
                                 
                                 let currentScore = 0;
                                 let isManual = manualGrade !== undefined;
@@ -469,7 +542,7 @@
                                 if (isManual) {
                                     currentScore = manualGrade;
                                 } else {
-                                    if (q.type === 'multiple_choice' || q.type === 'true_false') {
+                                    if (isAutoGradedType) {
                                             if(studentAns === q.correctAnswer) currentScore = maxPoints;
                                     }
                                     else if (q.type === 'identification' && q.correctAnswer) {
@@ -537,12 +610,15 @@
                                                         </div>
                                                     )}
                                                 </div>
-                                                <button 
-                                                    onClick={() => toggleReviewStatus(submission.id, q.id, !isReviewed)}
-                                                    className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${isReviewed ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-navy-dark text-slate-400 border border-navy-lighter hover:border-gold hover:text-gold'}`}
-                                                >
-                                                    {isReviewed ? <><Icons.Check size={14}/> Reviewed</> : "Mark Reviewed"}
-                                                </button>
+                                                
+                                                {!isAutoGradedType && (
+                                                    <button 
+                                                        onClick={() => toggleReviewStatus(submission.id, q.id, !isReviewed)}
+                                                        className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${isReviewed ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-navy-dark text-slate-400 border border-navy-lighter hover:border-gold hover:text-gold'}`}
+                                                    >
+                                                        {isReviewed ? <><Icons.Check size={14}/> Reviewed</> : "Mark Reviewed"}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -550,14 +626,14 @@
                             })}
                         </div>
                         <div className="p-4 border-t border-navy-lighter bg-navy-dark/50 text-center rounded-b-2xl text-xs text-slate-500">
-                            All changes are saved automatically.
+                            Manual score changes automatically mark items as Reviewed.
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // 3. TEACHER DASHBOARD
+        // 4. TEACHER DASHBOARD
         const TeacherDashboard = ({ user, teacherName, onLogout }) => {
             const [view, setView] = useState("list"); 
             const [exams, setExams] = useState([]);
@@ -913,7 +989,7 @@
             );
         };
 
-        // 4. RESULTS & GRADING DASHBOARD
+        // 5. RESULTS & GRADING DASHBOARD
         const ResultsDashboard = ({ examId, onClose }) => {
             const [subs, setSubs] = useState([]);
             const [examData, setExamData] = useState(null);
@@ -1016,7 +1092,7 @@
             );
         };
 
-        // 5. STUDENT PORTAL
+        // 6. STUDENT PORTAL
         const StudentPortal = ({ onBack }) => {
             const [exams, setExams] = useState([]);
             const [filteredExams, setFilteredExams] = useState([]);
@@ -1035,9 +1111,10 @@
             const [step, setStep] = useState(1); 
             const [showHelp, setShowHelp] = useState(false);
             
-            // Timer state
+            // Features
             const [timeLeft, setTimeLeft] = useState(null);
             const [timerActive, setTimerActive] = useState(false);
+            const [showCalc, setShowCalc] = useState(false);
 
             const handleStudentLogin = () => {
                 const provider = new firebase.auth.GoogleAuthProvider();
@@ -1089,7 +1166,6 @@
                 setFilteredExams(matches);
             }, [exams, profileData]);
 
-            // Enhanced Integrity & Blur Detection
             useEffect(() => {
                 if (status !== 'taking') return;
                 
@@ -1107,7 +1183,7 @@
                 };
 
                 document.addEventListener("visibilitychange", h);
-                window.addEventListener("blur", b); // Detects alt-tab or clicking other apps
+                window.addEventListener("blur", b); 
                 
                 return () => {
                     document.removeEventListener("visibilitychange", h);
@@ -1115,7 +1191,7 @@
                 };
             }, [status]);
 
-            // Timer Logic
+            // Timer Logic Fix
             useEffect(() => {
                 let interval = null;
                 if (timerActive && timeLeft !== null) {
@@ -1123,7 +1199,8 @@
                         setTimeLeft((prevTime) => {
                             if (prevTime <= 1) {
                                 clearInterval(interval);
-                                submitFinal(true); // Auto submit
+                                // Move submitFinal out of the state update callback
+                                setTimeout(() => submitFinal(true), 0);
                                 return 0;
                             }
                             return prevTime - 1;
@@ -1150,7 +1227,6 @@
             const beginTest = () => {
                 if(studentName && agreed) {
                     setStatus('taking');
-                    // Setup Timer if duration exists
                     if(activeExam.duration) {
                         const savedStart = localStorage.getItem(`start_${activeExam.id}_${loginUser.uid}`);
                         const now = Date.now();
@@ -1181,7 +1257,10 @@
 
             const submitFinal = (auto = false) => {
                 if(!auto && !confirm("Submit?")) return;
-                if(auto) alert("Time is up! Submitting exam automatically.");
+                
+                if(auto) {
+                    alert("Time is up! Submitting exam automatically.");
+                }
 
                 setTimerActive(false);
                 db.ref('submissions').push({
@@ -1195,7 +1274,7 @@
                     teacherName: activeExam.teacherName
                 }).then(() => {
                     setCompletedExamIds(prev => new Set(prev).add(activeExam.id));
-                    localStorage.removeItem(`start_${activeExam.id}_${loginUser.uid}`); // Clear timer
+                    localStorage.removeItem(`start_${activeExam.id}_${loginUser.uid}`);
                     setStatus('submitted');
                 });
             };
@@ -1468,10 +1547,14 @@
             
             if (status === "taking") return (
                 <div className="min-h-screen p-4 md:p-8 bg-navy">
+                    {showCalc && <Calculator onClose={()=>setShowCalc(false)} />}
                     <div className="max-w-4xl mx-auto">
                         <div className="bg-navy-light/90 backdrop-blur-md p-5 rounded-2xl shadow-xl border border-navy-lighter mb-8 sticky top-4 z-20 flex justify-between items-center border-l-4 border-gold">
                             <div><h1 className="font-bold text-xl text-cream">{activeExam.title}</h1><p className="text-sm text-slate-400">{studentName}</p></div>
                             <div className="flex items-center gap-4">
+                                <button onClick={()=>setShowCalc(!showCalc)} className={`px-4 py-2 rounded-xl font-bold text-lg border flex items-center gap-2 transition-all ${showCalc ? 'bg-gold text-navy' : 'bg-navy-dark text-slate-400 border-navy-lighter'}`} title="Open Calculator">
+                                    <Icons.Calculator size={20}/>
+                                </button>
                                 {timeLeft !== null && (
                                     <div className={`px-4 py-2 rounded-xl font-bold text-lg border flex items-center gap-2 ${timeLeft < 300 ? 'bg-red-900/20 text-red-400 border-red-900/50 animate-pulse-red' : 'bg-navy-dark text-gold border-gold/30'}`}>
                                         <Icons.Clock size={20}/> {formatTime(timeLeft)}
@@ -1494,9 +1577,8 @@
             </div>;
         };
 
-        // 6. LANDING & LOGIN
+        // 7. LANDING & LOGIN
         
-        // --- NEW COMPONENTS ---
         const InstructionsSection = () => {
             const [tab, setTab] = useState('student');
             return (
